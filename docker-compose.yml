@@ -1,0 +1,81 @@
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: rajcv-nginx
+    restart: unless-stopped
+    networks:
+      - internal
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rajcv-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD not set}
+      - GF_SERVER_ROOT_URL=https://grafana.${DOMAIN}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SECURITY_DISABLE_GRAVATAR=true
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - internal
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:latest
+    container_name: rajcv-loki
+    restart: unless-stopped
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - loki_data:/loki
+      - ./grafana/loki-config.yaml:/etc/loki/local-config.yaml:ro
+    networks:
+      - internal
+
+  gitea:
+    image: gitea/gitea:latest
+    container_name: rajcv-gitea
+    restart: unless-stopped
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=sqlite3
+      - GITEA__server__DOMAIN=git.${DOMAIN}
+      - GITEA__server__ROOT_URL=https://git.${DOMAIN}
+      - GITEA__server__HTTP_PORT=3001
+      - GITEA__service__DISABLE_REGISTRATION=true
+    volumes:
+      - gitea_data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - internal
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: rajcv-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN not set}
+    networks:
+      - internal
+    depends_on:
+      - nginx
+      - grafana
+      - gitea
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  loki_data:
+  gitea_data:

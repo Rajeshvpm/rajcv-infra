@@ -1,0 +1,20 @@
+name: Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pull latest images
+        run: docker compose pull
+      - name: Rebuild and restart
+        run: docker compose up -d --build
+      - name: Prune old images
+        run: docker image prune -f
+      - name: Health check
+        run: sleep 5 && curl -sf http://localhost/healthz
+      - name: Show status
+        run: docker compose ps

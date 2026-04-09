@@ -1,0 +1,36 @@
+---
+- name: Setup rajcv-infra host
+  hosts: localhost
+  become: true
+  vars:
+    github_repo: "YOUR_GITHUB_USER/rajcv-infra"
+    deploy_dir: "/home/{{ ansible_env.SUDO_USER | default(ansible_user_id) }}/rajcv-infra"
+  tasks:
+    - name: Install Docker prerequisites
+      apt:
+        name: [ca-certificates, curl, gnupg, lsb-release]
+        state: present
+        update_cache: true
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    - name: Add Docker repo
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+    - name: Install Docker
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io, docker-buildx-plugin, docker-compose-plugin]
+        state: present
+        update_cache: true
+    - name: Enable Docker
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+    - name: Add user to docker group
+      user:
+        name: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+        groups: docker
+        append: true
