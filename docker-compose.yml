@@ -38,24 +38,6 @@ services:
     networks:
       - internal
 
-  gitea:
-    image: gitea/gitea:latest
-    container_name: rajcv-gitea
-    restart: unless-stopped
-    environment:
-      - USER_UID=1000
-      - USER_GID=1000
-      - GITEA__database__DB_TYPE=sqlite3
-      - GITEA__server__DOMAIN=git.${DOMAIN}
-      - GITEA__server__ROOT_URL=https://git.${DOMAIN}
-      - GITEA__server__HTTP_PORT=3001
-      - GITEA__service__DISABLE_REGISTRATION=true
-    volumes:
-      - gitea_data:/data
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
-    networks:
-      - internal
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -78,4 +60,3 @@ networks:
 volumes:
   grafana_data:
   loki_data:
-  gitea_data:
