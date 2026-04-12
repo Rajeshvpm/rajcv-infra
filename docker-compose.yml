@@ -51,7 +51,6 @@ services:
     depends_on:
       - nginx
       - grafana
-      - gitea
 
 networks:
   internal:
