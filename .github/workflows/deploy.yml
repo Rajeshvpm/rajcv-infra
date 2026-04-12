@@ -26,7 +26,10 @@ jobs:
         run: docker image prune -f
 
       - name: Health check
-        run: sleep 5 && curl -sf http://localhost/healthz
+        run: |
+          sleep 5
+          docker exec rajcv-nginx curl -sf http://localhost/healthz
+
 
       - name: Show status
         run: docker compose ps
