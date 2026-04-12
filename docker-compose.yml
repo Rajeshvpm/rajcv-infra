@@ -5,6 +5,8 @@ services:
       dockerfile: Dockerfile
     container_name: rajcv-nginx
     restart: unless-stopped
+    ports:
+      - "8080:80"
     networks:
       - internal
 
