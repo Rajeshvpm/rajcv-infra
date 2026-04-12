@@ -1,0 +1,21 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+
+  - job_name: nginx
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          service: cv-site
+
+  - job_name: node
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          service: vm-host
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']

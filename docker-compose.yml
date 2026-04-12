@@ -1,4 +1,5 @@
 services:
+
   nginx:
     build:
       context: ./nginx
@@ -10,6 +11,17 @@ services:
     networks:
       - internal
 
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: rajcv-nginx-exporter
+    restart: unless-stopped
+    command:
+      - --nginx.scrape-uri=http://nginx:80/nginx_status
+    networks:
+      - internal
+    depends_on:
+      - nginx
+
   grafana:
     image: grafana/grafana:latest
     container_name: rajcv-grafana
@@ -17,8 +29,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:?GRAFANA_PASSWORD not set}
-      - GF_SERVER_ROOT_URL=https://rajcv.online/grafana/
-      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SERVER_ROOT_URL=https://grafana.rajcv.online
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_SECURITY_DISABLE_GRAVATAR=true
@@ -29,6 +41,7 @@ services:
       - internal
     depends_on:
       - loki
+      - prometheus
 
   loki:
     image: grafana/loki:latest
@@ -41,6 +54,48 @@ services:
     networks:
       - internal
 
+  promtail:
+    image: grafana/promtail:latest
+    container_name: rajcv-promtail
+    restart: unless-stopped
+    command: -config.file=/etc/promtail/config.yaml
+    volumes:
+      - ./grafana/promtail-config.yaml:/etc/promtail/config.yaml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    networks:
+      - internal
+    depends_on:
+      - loki
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rajcv-prometheus
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - internal
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: rajcv-node-exporter
+    restart: unless-stopped
+    pid: host
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - internal
 
   cloudflared:
     image: cloudflare/cloudflared:latest
@@ -62,3 +117,4 @@ networks:
 volumes:
   grafana_data:
   loki_data:
+  prometheus_data:
