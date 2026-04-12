@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rajesh P - Cloud Operations Engineer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom Colors for the new design */
+        :root {
+            --color-primary: #1e293b; /* Dark Slate for text */
+            --color-circle-orange: #f97316; /* Bright Orange */
+            --color-circle-red: #ef4444; /* Bright Red */
+            --color-circle-cyan: #06b6d4; /* Bright Cyan - Used for Chatbot/Action */
+            --color-llm-action: #10b981; /* Emerald Green for LLM action */
+        }
+        
+        body {
+            background-color: #f7f7f7; /* Very light gray background */
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        /* --- Chatbot Styles --- */
+        #chat-messages::-webkit-scrollbar-thumb { background-color: var(--color-circle-cyan); }
+        #chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 90%;
+            max-width: 320px; /* Adjusted: Smaller width */
+            height: 450px; /* Adjusted: Smaller height */
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        @media (max-width: 640px) {
+            #chatbot {
+                bottom: 10px;
+                right: 10px;
+                width: calc(100% - 20px);
+                max-width: none;
+                height: 60vh; /* Adjusted: Smaller mobile height */
+            }
+        }
+        
+        #toggle-chat {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1001;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-weight: 600;
+            background-color: var(--color-circle-cyan);
+        }
+
+        #chat-header {
+            background-color: var(--color-circle-cyan);
+        }
+
+        #send-btn {
+            background-color: var(--color-circle-cyan);
+        }
+
+        .chat-message-bot {
+            background-color: #cffafe;
+            border-radius: 10px 10px 10px 0;
+            padding: 8px 12px;
+            max-width: 85%;
+            align-self: flex-start;
+        }
+
+        .chat-message-user {
+            background-color: #e0f2f1;
+            border-radius: 10px 10px 0 10px;
+            padding: 8px 12px;
+            max-width: 85%;
+            align-self: flex-end;
+        }
+
+        /* --- New Design Styles --- */
+        .wix-container {
+            min-height: calc(100vh - 80px); /* Account for footer height */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 16px;
+        }
+
+        .profile-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .profile-card {
+                flex-direction: row;
+                text-align: left;
+            }
+        }
+        
+        .profile-image-container {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            overflow: hidden;
+            background-color: #e0e0e0;
+            margin-bottom: 2rem;
+            flex-shrink: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
+            cursor: pointer; /* Indicate it's clickable */
+            position: relative;
+        }
+        .profile-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Circular Navigation Buttons */
+        .nav-circle {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+            line-height: 1.2;
+            font-size: 14px;
+        }
+        .nav-circle:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Footer styles */
+        .wix-footer {
+            border-top: 1px solid #ddd;
+            padding: 20px 0;
+            color: #555;
+            font-size: 12px;
+        }
+
+        /* LLM Draft Box */
+        #llm-output-box {
+            background-color: #f0fdf4; /* Light Green Background */
+            border-left: 5px solid var(--color-llm-action);
+            padding: 1rem;
+            margin-top: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Input for Photo Upload -->
+    <input type="file" id="profile-upload-input" accept="image/*" class="hidden">
+
+    <!-- Main Content Area -->
+    <div class="wix-container">
+        <div class="profile-card">
+            
+            <!-- Left Side: Image (Clickable for upload) -->
+            <div id="profile-image-container" class="profile-image-container mr-0 md:mr-16">
+                <!-- Image source updated to local file reference IMG_0548.JPG -->
+                <img id="profile-image" src="IMG_0548.JPG" alt="Profile photo of Rajesh P">
+            </div>
+
+            <!-- Right Side: Text & Navigation -->
+            <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                <h1 class="text-6xl font-extrabold text-gray-900 mb-4">Hello</h1>
+                
+                <div class="mb-8 max-w-lg">
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">A Bit About Me</h2>
+                    <p id="profile-summary" class="text-gray-600 leading-relaxed">
+                        Loading profile summary...
+                    </p>
+                </div>
+                
+                <!-- Circular Navigation -->
+                <div class="flex space-x-4 mb-8">
+                    <button id="nav-resume" class="nav-circle" style="background-color: var(--color-circle-orange);">
+                        <span class="p-2">Experience</span>
+                    </button>
+                    <button id="nav-skills" class="nav-circle" style="background-color: var(--color-circle-red);">
+                        <span class="p-2">Skills</span>
+                    </button>
+                    <button id="nav-contact" class="nav-circle" style="background-color: var(--color-circle-cyan);">
+                        <span class="p-2">Contact</span>
+                    </button>
+                </div>
+                
+                <!-- LLM Action Button -->
+                <div class="w-full max-w-lg">
+                    <button id="generate-draft-btn" class="w-full bg-emerald-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-emerald-600 transition duration-300 flex items-center justify-center disabled:opacity-50" disabled>
+                        <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>
+                        <span id="llm-button-text">✨ Generate Draft Cover Letter Summary ✨</span>
+                    </button>
+                </div>
+
+                <!-- LLM Output Box -->
+                <div id="llm-output-box" class="w-full max-w-lg mt-8 hidden">
+                    <h3 class="font-bold text-lg text-emerald-700 mb-2 flex items-center">
+                        <i data-lucide="mail-check" class="w-5 h-5 mr-2"></i>
+                        Generated Cover Letter Draft
+                    </h3>
+                    <p id="llm-output-text" class="text-gray-700 whitespace-pre-wrap"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer Section -->
+    <footer class="wix-footer text-center">
+        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center px-4">
+            <div class="flex space-x-6 mb-2 sm:mb-0">
+                <div><span class="font-semibold">Phone</span><br>9789338733</div>
+                <div><span class="font-semibold">Email</span><br>rajesh.p.message@gmail.com</div>
+            </div>
+            <div class="flex space-x-3 items-center">
+                <span class="font-semibold">Follow Me</span>
+                <a href="https://www.linkedin.com/in/contact-rajesh" target="_blank" aria-label="LinkedIn Profile">
+                    <i data-lucide="linkedin" class="w-4 h-4 hover:text-gray-800 cursor-pointer"></i>
+                </a>
+                <a href="https://github.com/rajesh-post" target="_blank" aria-label="GitHub Profile">
+                    <i data-lucide="github" class="w-4 h-4 hover:text-gray-800 cursor-pointer"></i>
+                </a>
+            </div>
+            <div class="mt-2 sm:mt-0">
+                <!-- Cleaned footer line -->
+                © 2025 By Rajesh P
+            </div>
+        </div>
+    </footer>
+
+
+    <!-- Chatbot UI -->
+    <div id="chatbot" class="flex flex-col bg-white border border-gray-300">
+        <div id="chat-header" class="flex justify-between items-center p-3 text-white font-bold text-lg cursor-pointer">
+            <span class="flex items-center">
+                <i data-lucide="bot" class="w-5 h-5 mr-2"></i>
+                Resume Assistant
+            </span>
+            <button id="close-chat" class="text-xl leading-none p-1 hover:text-gray-200">&times;</button>
+        </div>
+        <div id="chat-messages" class="flex-grow p-4 space-y-3 overflow-y-auto bg-gray-50">
+            <!-- Initial welcome message -->
+            <div class="chat-message-bot">
+                Hello! I'm the Resume Assistant for **Rajesh P**. I can help you quickly find information about his experience, skills, and projects. Try asking about **skills**, **experience**, or the **summary**.
+            </div>
+        </div>
+        <div id="chat-input" class="p-3 border-t border-gray-200 flex space-x-2 bg-white">
+            <input type="text" id="user-input" placeholder="Ask about Rajesh's resume..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-sm">
+            <button id="send-btn" class="text-white p-2 rounded-lg hover:opacity-80 transition duration-150 flex items-center justify-center disabled:opacity-50" disabled>
+                <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Chatbot Toggle Button -->
+    <button id="toggle-chat" class="text-white p-3 rounded-full hover:opacity-80 transition duration-200">
+        <i data-lucide="message-square" class="w-5 h-5"></i>
+    </button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- Configuration ---
+        const API_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const API_KEY = ""; // Kept empty for Canvas environment
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
+        const MAX_RETRIES = 3;
+
+        // Global variables provided by the environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Firebase Initialization and Auth ---
+        let auth, db;
+        let userId = 'anonymous';
+        let isAuthReady = false;
+
+        if (firebaseConfig) {
+            const app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            
+            (async () => {
+                try {
+                    if (initialAuthToken) {
+                        const userCredential = await signInWithCustomToken(auth, initialAuthToken);
+                        userId = userCredential.user.uid;
+                    } else {
+                        const userCredential = await signInAnonymously(auth);
+                        userId = userCredential.user.uid;
+                    }
+                    isAuthReady = true;
+                    console.log("Firebase Auth successful. User ID:", userId);
+                    // Enable the LLM button once auth is ready
+                    document.getElementById('generate-draft-btn').disabled = false;
+                } catch (error) {
+                    console.error("Firebase Auth failed:", error);
+                }
+            })();
+        } else {
+            console.warn("Firebase config not available. Running in non-persistent mode.");
+            // Still enable the button for Gemini functionality even without Firestore/Auth
+             document.getElementById('generate-draft-btn').disabled = false;
+        }
+
+        // --- LLM API Utility Functions ---
+
+        async function fetchWithRetry(url, options, retries = MAX_RETRIES) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    if (response.status === 429) { // Too Many Requests
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+                    // For other errors, throw to exit loop
+                    throw new Error(`API returned status ${response.status}: ${response.statusText}`);
+                } catch (error) {
+                    if (i === retries - 1) {
+                        throw new Error(`Request failed after ${retries} attempts: ${error.message}`);
+                    }
+                }
+            }
+        }
+
+        async function generateCoverLetterDraft() {
+            const button = document.getElementById('generate-draft-btn');
+            const buttonText = document.getElementById('llm-button-text');
+            const outputBox = document.getElementById('llm-output-box');
+            const outputText = document.getElementById('llm-output-text');
+            
+            button.disabled = true;
+            outputBox.classList.add('hidden');
+            buttonText.textContent = 'Generating Draft...';
+
+            const resumeSummary = resumeData.profile;
+            const experienceDetails = resumeData.experience.map(job => 
+                `**${job.title}** at ${job.company} (${job.dates}): ${job.details.join('; ')}`
+            ).join('\n---\n');
+
+            const systemPrompt = `You are a world-class professional resume and cover letter writer. Your goal is to write a single, compelling, introductory paragraph (maximum 100 words) for a cover letter, based on the provided resume data. Highlight the candidate's core strengths (Cloud Operations, automation, reliability, and incident reduction). Do not include salutations or closing remarks.`;
+            
+            const userQuery = `Draft a concise cover letter introductory paragraph using the following resume content:\n\nPROFILE: "${resumeSummary}"\n\nEXPERIENCE:\n${experienceDetails}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+                // Do not use tools/grounding for this internal summarization task
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const response = await fetchWithRetry(API_URL, options);
+                const result = await response.json();
+                
+                const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (generatedText) {
+                    outputText.textContent = generatedText;
+                    outputBox.classList.remove('hidden');
+                } else {
+                    outputText.textContent = "Could not generate a cover letter draft. The LLM response was empty or malformed.";
+                    outputBox.classList.remove('hidden');
+                    console.error("LLM Generation Error:", result);
+                }
+
+            } catch (error) {
+                outputText.textContent = `Error: Failed to connect to the drafting service. Please check the console for details. (${error.message})`;
+                outputBox.classList.remove('hidden');
+                console.error("API Call Error:", error);
+            } finally {
+                buttonText.textContent = '✨ Generate Draft Cover Letter Summary ✨';
+                button.disabled = false;
+            }
+        }
+
+        // --- Resume Data (Unchanged) ---
+        const resumeData = {
+            personal: {
+                name: "Rajesh P",
+                title: "Cloud Operations Engineer",
+                contact: "rajesh.p.message@gmail.com | 9789338733 | <a href='https://www.linkedin.com/in/your-profile' target='_blank'>Linkedin</a> | <a href='https://github.com/rajesh-post' target='_blank'>https://github.com/rajesh-post</a>",
+            },
+            profile: "Highly skilled Cloud Operations Engineer focused on maintaining 99.9% system availability in production environments. Proficient in automating infrastructure with Python, Bash, Puppet, and Ansible. Expertise in performance optimization and incident reduction using monitoring tools like Grafana and Datadog. Strong focus on reducing Mean Time To Resolution (MTTR), eliminating manual toil, and driving system reliability through proactive monitoring and automation.",
+            experience: [
+                {
+                    title: "Cloud Ops Engineer",
+                    company: "ZOHO",
+                    dates: "Since Jan 2025",
+                    details: [
+                        "Designed and managed NGINX L7 load balancing with L3 Keepalived failover, ensuring seamless traffic routing and high availability during peak loads.",
+                        "Maintained 99.99% uptime across multi–data center environments using Grafana, Elasticsearch, and proprietary monitoring tools; reduced incident response times by 20%.",
+                        "Managed Java applications on Apache Tomcat servers, handling JVM tuning and SSL certificate management for enterprise web hosting.",
+                        "Optimized application response times and reduced database load by expertly managing Redis cluster servers for CDN and proxy caching.",
+                        "Used Puppet for configuration management, ensuring infrastructure consistency across production and test servers, significantly reducing manual configuration errors.",
+                        "Maintained MySQL and MongoDB databases, including replication monitoring, performance tuning, and backup management across clustered environments.",
+                        "Deployed FortiClient VPN with MFA and Wazuh security agents across all production servers, enhancing threat detection and ensuring compliance.",
+                        "Participated in on-call rotations, providing 24/7 support for critical systems and ensuring prompt resolution of incidents, often achieving a low MTTR."
+                    ]
+                },
+                {
+                    title: "Asst. Systems Engineer",
+                    company: "TCS",
+                    dates: "Dec 2021 – Jan 2025, Chennai",
+                    details: [
+                        "Managed Linux systems, focusing on system setup, performance tuning, and server hardening for critical servers.",
+                        "Contributed to patching automation by troubleshooting and modifying existing Ansible scripts, improving patching success rates by an estimated 20%.",
+                        "Strengthened system security by implementing best practices and applying critical patches.",
+                        "Contributed to achieving 99.9% uptime by continuously monitoring and optimizing Linux system performance with tools such as vSphere and DataDog.",
+                        "Used Git for code management and fostering team collaboration, integrated with CI/CD pipelines."
+                    ]
+                },
+                {
+                    title: "Product Consultant",
+                    company: "Linz Technologies",
+                    dates: "April 2021 – December 2021",
+                    details: [
+                        "Spearheaded the implementation and support of Zoho CRM and Zoho Desk, ensuring seamless integration.",
+                        "Collaborated directly with stakeholders to identify and gather business requirements.",
+                        "Customized and configured Zoho applications based on detailed requirements.",
+                        "Partnered with cross-functional teams for successful deployment of Zoho products, providing crucial support."
+                    ]
+                }
+            ],
+            skills: {
+                "Operating Systems": ["Debian", "Red Hat", "Linux"],
+                "Databases": ["MySQL", "MongoDB", "Redis"],
+                "Scripting Languages": ["Bash", "Python"],
+                "Web Servers": ["NGINX", "Apache Tomcat"],
+                "Configuration Management": ["Puppet", "Ansible"],
+                "Monitoring Tools": ["Grafana", "Opsgenie", "DataDog"],
+                "Security & Networking": ["Firewalls", "SELinux", "IDS/IPS", "Wazuh", "FortiClient VPN with MFA"],
+                "Containerization & CI/CD": ["Docker", "Git", "CI/CD Pipelines"],
+                "Other Tools": ["Apache Kafka", "OpenVPN", "Service Now"]
+            },
+            education: [
+                {
+                    institution: "Hindustan University",
+                    degree: "B.Tech",
+                    field: "Aeronautical"
+                }
+            ],
+            certifications: [
+                "Certified Linux Admin (E2) - Demonstrates proficiency in Linux system administration.",
+                "Process Improvement Recognition - Appreciated for overhauling system documentation processes, significantly enhancing clarity."
+            ]
+        };
+        
+        // --- Event Listeners and Initialization ---
+
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // INJECT PROFILE SUMMARY
+            document.getElementById('profile-summary').textContent = resumeData.profile;
+
+            // Wire LLM button
+            document.getElementById('generate-draft-btn').addEventListener('click', generateCoverLetterDraft);
+
+            // Wire Navigation buttons to Chatbot
+            document.getElementById('nav-resume').addEventListener('click', () => {
+                chatbotEl.style.display = 'flex';
+                simulateUserQuery('summarize my experience'); 
+            });
+            
+             document.getElementById('nav-skills').addEventListener('click', () => {
+                chatbotEl.style.display = 'flex';
+                simulateUserQuery('list all technical skills'); 
+            });
+
+             document.getElementById('nav-contact').addEventListener('click', () => {
+                chatbotEl.style.display = 'flex';
+                simulateUserQuery('contact details'); 
+            });
+
+            // --- Photo Upload Logic ---
+            const profileContainer = document.getElementById('profile-image-container');
+            const profileInput = document.getElementById('profile-upload-input');
+            const profileImage = document.getElementById('profile-image');
+
+            // 1. Click the container to trigger the hidden file input
+            profileContainer.addEventListener('click', () => {
+                profileInput.click();
+            });
+
+            // 2. Read the selected file and set the image source
+            profileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        // Set the image source to the Base64 data URL
+                        profileImage.src = e.target.result;
+                        profileImage.alt = "Rajesh P Profile Photo";
+                    };
+                    // Read the image file as a Data URL (Base64)
+                    reader.readAsDataURL(file);
+                }
+            });
+            // --- End Photo Upload Logic ---
+        });
+
+
+        // --- Chatbot Logic ---
+
+        const chatbotEl = document.getElementById('chatbot');
+        const toggleChatBtn = document.getElementById('toggle-chat');
+        const closeChatBtn = document.getElementById('close-chat');
+        const chatMessagesEl = document.getElementById('chat-messages');
+        const userInputEl = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        let isSending = false;
+
+        function simulateUserQuery(query) {
+             appendMessage('user', query);
+             const loadingIndicator = createLoadingMessage();
+
+            setTimeout(async () => {
+                try {
+                    const botResponse = await getResumeDataResponse(query); 
+                    chatMessagesEl.removeChild(loadingIndicator);
+                    appendMessage('bot', botResponse);
+                } catch (error) {
+                    console.error("Local function error:", error);
+                    chatMessagesEl.removeChild(loadingIndicator);
+                    appendMessage('bot', "An unexpected error occurred while processing the resume data.");
+                } finally {
+                    isSending = false;
+                    sendBtn.disabled = userInputEl.value.trim() === ''; 
+                }
+            }, 100); 
+        }
+
+        toggleChatBtn.addEventListener('click', () => {
+            chatbotEl.style.display = chatbotEl.style.display === 'flex' ? 'none' : 'flex';
+            if (chatbotEl.style.display === 'flex') {
+                userInputEl.focus();
+                scrollToBottom();
+            }
+        });
+        closeChatBtn.addEventListener('click', () => {
+            chatbotEl.style.display = 'none';
+        });
+
+        userInputEl.addEventListener('input', () => {
+            sendBtn.disabled = userInputEl.value.trim() === '' || isSending;
+        });
+
+        sendBtn.addEventListener('click', sendMessage);
+        userInputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !sendBtn.disabled) {
+                sendMessage();
+            }
+        });
+
+        function scrollToBottom() {
+            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+        }
+
+        function appendMessage(sender, text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add(sender === 'user' ? 'chat-message-user' : 'chat-message-bot');
+            messageDiv.innerHTML = sender === 'bot' ? text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') : text;
+            chatMessagesEl.appendChild(messageDiv);
+            scrollToBottom();
+        }
+
+        function createLoadingMessage() {
+            const loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loading-indicator';
+            loadingDiv.classList.add('chat-message-bot', 'flex', 'space-x-1', 'items-center');
+            loadingDiv.innerHTML = `<span class="text-sm">Typing...</span>`;
+            chatMessagesEl.appendChild(loadingDiv);
+            scrollToBottom();
+            return loadingDiv;
+        }
+
+        async function sendMessage() {
+            const userText = userInputEl.value.trim();
+            if (userText === '') return;
+
+            appendMessage('user', userText);
+            userInputEl.value = '';
+            sendBtn.disabled = true;
+            isSending = true;
+
+            const loadingIndicator = createLoadingMessage();
+
+            try {
+                const botResponse = await getResumeDataResponse(userText); 
+                chatMessagesEl.removeChild(loadingIndicator);
+                appendMessage('bot', botResponse);
+            } catch (error) {
+                console.error("Local function error:", error);
+                chatMessagesEl.removeChild(loadingIndicator);
+                appendMessage('bot', "An unexpected error occurred while processing the resume data.");
+            } finally {
+                isSending = false;
+                sendBtn.disabled = userInputEl.value.trim() === ''; 
+            }
+        }
+
+        // --- Local Data Response ---
+        async function getResumeDataResponse(userQuery) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            const query = userQuery.toLowerCase();
+            let responseText = '';
+
+            if (query.includes('skill') || query.includes('technology') || query.includes('tool')) {
+                responseText = "Rajesh's core skills are categorized as follows:\n\n";
+                for (const category in resumeData.skills) {
+                    responseText += `**${category}:** ${resumeData.skills[category].join(', ')}\n`;
+                }
+            } else if (query.includes('experience') || query.includes('job') || query.includes('work') || query.includes('company')) {
+                const latestJob = resumeData.experience[0];
+                responseText = `Rajesh is currently a **${latestJob.title}** at **${latestJob.company}** (since ${latestJob.dates.replace('Since ', '')}).\n\n`;
+                
+                const otherJobs = resumeData.experience.slice(1).map(job => `${job.title} at ${job.company} (${job.dates})`).join('\n- ');
+                if (otherJobs) {
+                    responseText += "Previous roles include:\n- " + otherJobs;
+                }
+            } else if (query.includes('summary') || query.includes('profile') || query.includes('focus')) {
+                responseText = `Here is Rajesh's professional profile summary:\n\n"${resumeData.profile}"`;
+            } else if (query.includes('education') || query.includes('degree') || query.includes('certification') || query.includes('award')) {
+                const edu = resumeData.education[0];
+                const certs = resumeData.certifications.join('\n- ');
+                
+                responseText = `Rajesh holds a **${edu.degree}** in **${edu.field}** from ${edu.institution}.\n\n`;
+                responseText += "Key Certifications and Awards include:\n- " + certs;
+
+            } else if (query.includes('contact') || query.includes('email') || query.includes('phone') || query.includes('linkedin')) {
+                responseText = `You can contact Rajesh via: ${resumeData.personal.contact.replace(/<a.*?>(.*?)<\/a>/g, '$1')}. The email is **rajesh.p.message@gmail.com**.`;
+            } else {
+                responseText = "I can only retrieve information directly from the resume data. Please try asking about **skills**, **experience**, **education**, or the **profile summary** of Rajesh P.";
+            }
+
+            return responseText;
+        }
+
+    </script>
+</body>
+</html>
