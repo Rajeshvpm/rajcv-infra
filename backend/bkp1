@@ -1,0 +1,69 @@
+const express = require('express');
+const nodemailer = require('nodemailer');
+const app = express();
+
+// This allows the server to read the JSON data sent from your HTML page
+app.use(express.json());
+
+// --- CONFIGURATION SECTION ---
+const GMAIL_USER = 'rajesh.cs225@gmail.com'; 
+const GMAIL_PASS = 'yhom vnwc hzvv ukkf'; // Your 16-character Gmail App Password
+
+const MAIL_FOR_RAJESH = 'rajesh.cs225@gmail.com'; // Special mail for name "Rajesh"
+const MAIL_FOR_ID_1 = 'rajesh.cs225@gmail.com';    // Default for ID 1
+const MAIL_FOR_ID_2 = 'rajesh.cs225@gmail.com';     // Default for ID 2
+// ------------------------------
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: GMAIL_USER,
+        pass: GMAIL_PASS
+    }
+});
+
+app.post('/submit', (req, res) => {
+    const { serviceId, name, task, cost, availability, description } = req.body;
+
+    // --- LOGIC: CHOOSE THE RECIPIENT ---
+    let targetEmail = "";
+
+    // 1. Check if the name is Rajesh (Case Insensitive)
+    if (name && name.toLowerCase() === 'rajesh') {
+        targetEmail = MAIL_FOR_RAJESH;
+    } 
+    // 2. Otherwise, route based on the Service ID
+    else {
+        if (serviceId === "1") {
+            targetEmail = MAIL_FOR_ID_1;
+        } else {
+            targetEmail = MAIL_FOR_ID_2;
+        }
+    }
+
+    const mailOptions = {
+        from: GMAIL_USER,
+        to: targetEmail,
+        subject: `New Request from ${name} (ID: ${serviceId})`,
+        text: `
+            Name: ${name}
+            Service ID: ${serviceId}
+            Details: ${task || description}
+            Cost: ${cost}
+            Time: ${availability}
+        `
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            console.log(error);
+            return res.status(500).send("Failed to send email.");
+        }
+        console.log('Email sent to: ' + targetEmail);
+        res.status(200).send("Success");
+    });
+});
+
+app.listen(5000, () => {
+    console.log('Backend server is running on port 5000');
+});
