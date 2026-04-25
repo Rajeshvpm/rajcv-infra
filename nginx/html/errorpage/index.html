@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page Not Found</title>
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        /* The Animated Cat Container */
+        .cat-wrapper {
+            font-size: 100px;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+            100% { transform: translateY(0px) rotate(0deg); }
+        }
+
+        h1 {
+            font-size: 8rem;
+            margin: 0;
+            color: #2d3436;
+            letter-spacing: -5px;
+        }
+
+        p {
+            font-size: 1.5rem;
+            color: #636e72;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background-color: #ff7675;
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #d63031;
+        }
+
+        .cat-speech {
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Speech bubble arrow */
+        .cat-speech::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            border-width: 10px 10px 0;
+            border-style: solid;
+            border-color: white transparent;
+            display: block;
+            width: 0;
+            margin-left: -10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="cat-speech">"I've looked everywhere... it's not here."</div>
+        <br>
+        <div class="cat-wrapper">
+            🐱
+        </div>
+        <h1>404</h1>
+        <p>Oops! This page has chased a laser pointer right off the site.</p>
+        <a href="/" class="btn">Take Me Home</a>
+    </div>
+
+</body>
+</html>

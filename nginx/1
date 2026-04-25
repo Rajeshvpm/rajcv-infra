@@ -1,0 +1,5 @@
+Command 'cutl' not found, did you mean:
+  command 'curl' from snap curl (8.17.0)
+  command 'cut' from deb coreutils (9.4-3ubuntu6.2)
+  command 'curl' from deb curl (8.5.0-2ubuntu10.8)
+See 'snap info <snapname>' for additional versions.

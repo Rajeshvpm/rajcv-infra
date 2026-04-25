@@ -8,7 +8,7 @@ app.use(express.json());
 const GMAIL_USER = 'rajesh.cs225@gmail.com';
 const GMAIL_PASS = 'yhom vnwc hzvv ukkf'; // Your 16-character Gmail App Password
 
-const MAIL_FOR_RAJESH = 'rajesh.cs225@gmail.com'; // Special mail for name "Rajesh"
+const MAIL_FOR_RAJESH = 'gammu661996@gmail.com'; // Special mail for name "Rajesh"
 const MAIL_FOR_ID_1 = 'rajesh.cs225@gmail.com';    // Default for ID 1
 // ------------------------------
 
