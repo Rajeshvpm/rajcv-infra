@@ -1,0 +1,189 @@
+const express = require('express');
+const nodemailer = require('nodemailer');
+const { Pool } = require('pg');
+const { Kafka } = require('kafkajs');
+
+const app = express();
+app.use(express.json());
+app.use(express.static('/app'));
+
+// --- CONFIGURATION ---
+const GMAIL_USER = 'rajesh.cs225@gmail.com';
+const GMAIL_PASS = 'yhom vnwc hzvv ukkf';
+const MAIL_FOR_RAJESH = 'gammu661996@gmail.com';
+const MAIL_FOR_ID_1 = 'rajesh.cs225@gmail.com';
+
+// --- POSTGRES ---
+const db = new Pool({
+  host: 'rajcv-postgres',
+  port: 5432,
+  database: 'rajcv_services',
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+});
+
+// --- KAFKA ---
+const kafka = new Kafka({ brokers: ['kafka:9092'] });
+const producer = kafka.producer();
+
+// Connect producer on startup
+producer.connect().then(() => {
+  console.log('Kafka producer connected');
+}).catch(err => {
+  console.error('Kafka producer connection failed:', err.message);
+  // App still works — email fallback below handles it
+});
+
+// --- NODEMAILER (kept as fallback) ---
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: { user: GMAIL_USER, pass: GMAIL_PASS }
+});
+
+// Helper to send mail directly (used as fallback)
+async function sendMailDirect(targetEmail, emailSubject, emailBody) {
+  return transporter.sendMail({
+    from: GMAIL_USER,
+    to: targetEmail,
+    subject: emailSubject,
+    text: emailBody
+  });
+}
+
+// --- SUBMIT ROUTE ---
+app.post('/submit', async (req, res) => {
+  const { name, task, cost, availability, description } = req.body;
+
+  // Determine recipient
+  const targetEmail = (name && name.toLowerCase() === 'rajesh')
+    ? MAIL_FOR_RAJESH
+    : MAIL_FOR_ID_1;
+
+  const type = task ? 'service' : 'favour';
+
+  const emailSubject = task
+    ? `Service Request Raised by ${name}`
+    : `New Favour/Help Request from ${name}`;
+
+  const emailBody = task
+    ? `Hi,\nNew Service Request.\n\nFrom: ${name}\nTask: ${task}\nBudget: ${cost}\nTime: ${availability}\n\nSent via rajcv.online`
+    : `Hi,\n${name} needs help.\n\nMessage: "${description}"\n\nSent via rajcv.online`;
+
+  // --- 1. SAVE TO DATABASE ---
+  let ticketId = null;
+  try {
+    const result = await db.query(
+      `INSERT INTO service_requests
+        (name, type, task, cost, availability, description, target_email, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'PENDING') RETURNING id`,
+      [name, type, task || null, cost || null, availability || null, description || null, targetEmail]
+    );
+    ticketId = result.rows[0].id;
+    console.log(`Ticket #${ticketId} saved to DB`);
+  } catch (dbErr) {
+    console.error('DB save failed:', dbErr.message);
+    // Continue anyway — don't block the user
+  }
+
+  // --- 2. PUBLISH TO KAFKA ---
+  let kafkaPublished = false;
+  try {
+    await producer.send({
+      topic: 'service.request.created',
+      messages: [{
+        key: String(ticketId || Date.now()),
+        value: JSON.stringify({
+          ticketId,
+          name,
+          type,
+          task,
+          cost,
+          availability,
+          description,
+          targetEmail,
+          emailSubject,
+          emailBody,
+          createdAt: new Date().toISOString()
+        })
+      }]
+    });
+    kafkaPublished = true;
+    console.log(`Event published to Kafka for ticket #${ticketId}`);
+  } catch (kafkaErr) {
+    console.error('Kafka publish failed:', kafkaErr.message);
+  }
+
+  // --- 3. FALLBACK: send mail directly if Kafka failed ---
+  if (!kafkaPublished) {
+    try {
+      await sendMailDirect(targetEmail, emailSubject, emailBody);
+      console.log(`Fallback: email sent directly for ticket #${ticketId}`);
+      if (ticketId) {
+        await db.query(
+          `UPDATE service_requests SET email_sent=true WHERE id=$1`,
+          [ticketId]
+        );
+      }
+    } catch (mailErr) {
+      console.error('Fallback mail also failed:', mailErr.message);
+      return res.status(500).send("Error processing request");
+    }
+  }
+
+  res.status(200).json({
+    success: true,
+    ticketId,
+    message: "Request received successfully"
+  });
+});
+
+// --- TICKET DASHBOARD API ---
+
+// Get all tickets (with optional filter)
+app.get('/tickets', async (req, res) => {
+  const { status } = req.query; // ?status=PENDING or ?status=CLOSED
+  try {
+    const query = status
+      ? `SELECT * FROM service_requests WHERE status=$1 ORDER BY created_at DESC`
+      : `SELECT * FROM service_requests ORDER BY created_at DESC`;
+    const params = status ? [status] : [];
+    const result = await db.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Close a ticket
+app.patch('/tickets/:id/close', async (req, res) => {
+  const { id } = req.params;
+  const { closedBy } = req.body;
+  try {
+    await db.query(
+      `UPDATE service_requests
+       SET status='CLOSED', closed_at=NOW(), closed_by=$1
+       WHERE id=$2`,
+      [closedBy || 'admin', id]
+    );
+
+    // Publish closed event to Kafka
+    try {
+      await producer.send({
+        topic: 'service.request.closed',
+        messages: [{
+          key: String(id),
+          value: JSON.stringify({ ticketId: id, closedBy, closedAt: new Date().toISOString() })
+        }]
+      });
+    } catch (kafkaErr) {
+      console.error('Kafka close event failed:', kafkaErr.message);
+      // Non-critical, ticket is already closed in DB
+    }
+
+    res.json({ success: true, message: `Ticket #${id} closed` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));

@@ -1,0 +1,6 @@
+users:
+  rajesh:
+    email: "rajesh.cs225@gmail.com"
+    password: "$argon2id$v=19$m=65536,t=3,p=4$yPcsbDIiJfuXjkaXjrzNNg$ZYPBgWOcjSfcWVWrciL2r434iBWMtCQzJqBEnFB2BU4"
+    groups: [admins]
+    displayname: "Rajesh (Admin)"

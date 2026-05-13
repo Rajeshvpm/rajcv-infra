@@ -22,10 +22,33 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
-    command: sh -c "npm install express nodemailer && node server.js"
+    environment:
+      - POSTGRES_USER=rajcv
+      - POSTGRES_PASSWORD=admin1
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    command: sh -c "npm install express nodemailer pg kafkajs && node server.js"
     networks:
       - internal
-
+  email-consumer:
+    image: node:18-alpine
+    container_name: rajcv-email-consumer
+    working_dir: /app
+    restart: unless-stopped
+    volumes:
+      - ./email-consumer:/app
+      - /app/node_modules
+    command: sh -c "npm install kafkajs nodemailer pg && node consumer.js"
+    environment:
+      - POSTGRES_USER=rajcv
+      - POSTGRES_PASSWORD=admin1
+      - GMAIL_USER=rajesh.cs225@gmail.com
+      - GMAIL_PASS=yhom vnwc hzvv ukkf
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+    networks:
+      - internal
+    depends_on:
+      - rajcv-kafka
+      - rajcv-postgres
   mtail:
     image: ghcr.io/google/mtail:latest
     container_name: rajcv-mtail
@@ -51,7 +74,9 @@ services:
       - GF_SERVER_ROOT_URL=https://grafana.rajcv.online
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org. # Make sure this matches your Org name
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_FEATURE_TOGGLES_ENABLE=kubernetesClientDashboardsFolders=false
     volumes:
@@ -83,6 +108,8 @@ services:
       - ./grafana/promtail-config.yaml:/etc/promtail/config.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/log:/var/log:ro
+      - /var/lib/docker/volumes/rajcv-infra_nginx-logs/_data:/var/log/nginx:ro
+      - ./geoip/GeoLite2-City.mmdb:/etc/promtail/GeoLite2-City.mmdb:ro
     networks:
       - internal
     depends_on:
@@ -117,15 +144,87 @@ services:
     networks:
       - internal
 
+
+  rajcv-postgres:
+    image: postgres:16-alpine
+    container_name: rajcv-postgres
+    networks:
+      - internal
+    environment:
+      POSTGRES_DB: rajcv_services
+      POSTGRES_USER: rajcv
+      POSTGRES_PASSWORD: admin1
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  rajcv-kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: rajcv-kafka-ui
+    networks:
+      internal:
+    environment:
+      KAFKA_CLUSTERS_0_NAME: rajcv
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      SERVER_SERVLET_CONTEXT_PATH: /kafka
+    depends_on:
+      - rajcv-kafka
+    restart: unless-stopped
+  rajcv-kafka:
+    image: apache/kafka:3.7.0
+    container_name: rajcv-kafka
+    hostname: kafka
+    networks:
+      internal:
+        aliases:
+          - kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+      CLUSTER_ID: "rajcv-kafka-cluster-001"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    restart: unless-stopped
+
+
+  # Add these two new services to your existing file
+  authelia:
+    image: authelia/authelia:latest
+    container_name: authelia
+    restart: unless-stopped
+    volumes:
+      - ./authelia:/config
+    networks:
+      - internal  # Same network as your other containers
+    environment:
+      - TZ=Asia/Kolkata
+
+  authelia_redis:
+    image: redis:alpine
+    container_name: authelia_redis
+    restart: unless-stopped
+    networks:
+      - internal
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: rajcv-cloudflared
     restart: unless-stopped
-    command: tunnel --no-autoupdate run
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1  
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN not set}
+    command: tunnel --no-autoupdate --protocol http2 run
     networks:
-      - internal
+      - internal  
     depends_on:
       - nginx
       - grafana
@@ -140,3 +239,6 @@ volumes:
   loki_data:
   prometheus_data:
   nginx-logs:
+  volumes:
+  postgres_data:
+  kafka_data:

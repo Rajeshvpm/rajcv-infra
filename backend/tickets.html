@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RajCV — Service Requests</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f0f;
+      --surface: #161616;
+      --surface2: #1e1e1e;
+      --border: #2a2a2a;
+      --border2: #333;
+      --text: #e8e8e8;
+      --muted: #888;
+      --dim: #555;
+      --accent: #c8ff00;
+      --accent-dim: rgba(200,255,0,0.08);
+      --pending: #ffaa00;
+      --pending-bg: rgba(255,170,0,0.08);
+      --closed: #00cc88;
+      --closed-bg: rgba(0,204,136,0.08);
+      --service: #5599ff;
+      --service-bg: rgba(85,153,255,0.08);
+      --favour: #cc88ff;
+      --favour-bg: rgba(204,136,255,0.08);
+      --danger: #ff5555;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* TOP NAV */
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+    }
+    .nav-logo span { color: var(--muted); }
+    .nav-refresh {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      background: none;
+      border: 1px solid var(--border2);
+      padding: 5px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .nav-refresh:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* MAIN LAYOUT */
+    main { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+    /* STATS ROW */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+    .stat {
+      background: var(--surface);
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat-val {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .stat-val.c-pending { color: var(--pending); }
+    .stat-val.c-closed { color: var(--closed); }
+    .stat-val.c-email { color: var(--service); }
+
+    /* TOOLBAR */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .filters { display: flex; gap: 6px; }
+    .filter-btn {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--dim); }
+    .filter-btn.active {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .search-wrap { position: relative; }
+    .search-wrap input {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      padding: 6px 12px 6px 32px;
+      border-radius: 4px;
+      width: 220px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap input::placeholder { color: var(--dim); }
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--dim);
+      font-size: 13px;
+      pointer-events: none;
+    }
+
+    /* TICKET LIST */
+    .ticket-list { display: flex; flex-direction: column; gap: 1px; }
+
+    .ticket {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 60px 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      transition: border-color 0.15s;
+      animation: fadeIn 0.2s ease;
+    }
+    .ticket:hover { border-color: var(--border2); background: var(--surface2); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .ticket-id {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      padding-top: 2px;
+    }
+
+    .ticket-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+    .ticket-email-addr {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .ticket-subject {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .ticket-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+    .badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+    .badge.service  { background: var(--service-bg);  color: var(--service);  border: 1px solid rgba(85,153,255,0.2); }
+    .badge.favour   { background: var(--favour-bg);   color: var(--favour);   border: 1px solid rgba(204,136,255,0.2); }
+    .badge.pending  { background: var(--pending-bg);  color: var(--pending);  border: 1px solid rgba(255,170,0,0.2); }
+    .badge.closed   { background: var(--closed-bg);   color: var(--closed);   border: 1px solid rgba(0,204,136,0.2); }
+
+    .ticket-time { font-family: var(--mono); font-size: 11px; color: var(--dim); }
+    .ticket-cost { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    .ticket-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .btn-close {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      padding: 6px 14px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      background: none;
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .btn-close:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .btn-close:disabled { opacity: 0.3; cursor: not-allowed; border-color: var(--border); color: var(--dim); }
+    .closed-label { font-family: var(--mono); font-size: 11px; color: var(--closed); }
+    .closed-by { font-family: var(--mono); font-size: 10px; color: var(--dim); }
+
+    /* STATES */
+    .state-box {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 13px;
+      border: 1px dashed var(--border2);
+      border-radius: 6px;
+    }
+    .state-box .state-icon { font-size: 32px; margin-bottom: 1rem; opacity: 0.4; }
+
+    .error-bar {
+      background: rgba(255,85,85,0.08);
+      border: 1px solid rgba(255,85,85,0.25);
+      color: var(--danger);
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-family: var(--mono);
+      font-size: 12px;
+      margin-bottom: 1rem;
+    }
+
+    /* DETAIL EXPAND */
+    .ticket-detail {
+      display: none;
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .ticket.expanded .ticket-detail { display: block; }
+    .expand-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      background: none;
+      border: none;
+      color: var(--dim);
+      cursor: pointer;
+      padding: 0;
+      margin-top: 4px;
+    }
+    .expand-btn:hover { color: var(--muted); }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--dim);
+      border-top: 1px solid var(--border);
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">rajcv<span>/</span>service-requests</div>
+  <button class="nav-refresh" onclick="loadTickets()">↻ refresh</button>
+</nav>
+
+<main>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Total</div>
+      <div class="stat-val" id="s-total">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Pending</div>
+      <div class="stat-val c-pending" id="s-pending">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Closed</div>
+      <div class="stat-val c-closed" id="s-closed">—</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Email Sent</div>
+      <div class="stat-val c-email" id="s-email">—</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="filters">
+      <button class="filter-btn active" data-f="ALL"     onclick="setFilter('ALL',this)">All</button>
+      <button class="filter-btn"        data-f="PENDING" onclick="setFilter('PENDING',this)">Pending</button>
+      <button class="filter-btn"        data-f="CLOSED"  onclick="setFilter('CLOSED',this)">Closed</button>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">⌕</span>
+      <input type="text" id="search" placeholder="search by name or subject..." oninput="renderTickets()"/>
+    </div>
+  </div>
+
+  <div id="error-area"></div>
+
+  <!-- TICKET LIST -->
+  <div class="ticket-list" id="ticket-list">
+    <div class="state-box">
+      <div class="state-icon">⏳</div>
+      loading tickets...
+    </div>
+  </div>
+
+</main>
+
+<footer>rajcv-infra · service request tracker · auto-refreshes every 30s</footer>
+
+<script>
+  // ─── CONFIG ───────────────────────────────────────────────
+  // If this page is served from the same backend (port 3000),
+  // leave API_BASE as empty string.
+  // If accessing from a different domain, set it like:
+  // const API_BASE = 'https://tickets.rajcv.online';
+  const API_BASE = '';
+  // ──────────────────────────────────────────────────────────
+
+  let allTickets = [];
+  let currentFilter = 'ALL';
+
+  function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (diff < 60)    return 'just now';
+    if (diff < 3600)  return Math.floor(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+    return Math.floor(diff / 86400) + 'd ago';
+  }
+
+  function showError(msg) {
+    document.getElementById('error-area').innerHTML =
+      `<div class="error-bar">⚠ ${msg}</div>`;
+  }
+  function clearError() {
+    document.getElementById('error-area').innerHTML = '';
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTickets();
+  }
+
+  function updateStats(tickets) {
+    document.getElementById('s-total').textContent   = tickets.length;
+    document.getElementById('s-pending').textContent = tickets.filter(t => t.status === 'PENDING').length;
+    document.getElementById('s-closed').textContent  = tickets.filter(t => t.status === 'CLOSED').length;
+    document.getElementById('s-email').textContent   = tickets.filter(t => t.email_sent).length;
+  }
+
+  function renderTickets() {
+    const list   = document.getElementById('ticket-list');
+    const query  = (document.getElementById('search').value || '').toLowerCase();
+
+    let filtered = currentFilter === 'ALL'
+      ? allTickets
+      : allTickets.filter(t => t.status === currentFilter);
+
+    if (query) {
+      filtered = filtered.filter(t =>
+        (t.name        || '').toLowerCase().includes(query) ||
+        (t.task        || '').toLowerCase().includes(query) ||
+        (t.description || '').toLowerCase().includes(query) ||
+        (t.target_email|| '').toLowerCase().includes(query)
+      );
+    }
+
+    if (filtered.length === 0) {
+      list.innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">○</div>
+          no tickets found
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = filtered.map(t => `
+      <div class="ticket" id="ticket-${t.id}">
+        <div class="ticket-id">#${t.id}</div>
+
+        <div>
+          <div class="ticket-name">${escape(t.name || '—')}</div>
+          <div class="ticket-email-addr">${escape(t.target_email || '')}</div>
+          <div class="ticket-subject">${escape(t.task || t.description || '—')}</div>
+          <div class="ticket-meta">
+            <span class="badge ${t.type || 'service'}">${t.type === 'favour' ? 'favour' : 'service'}</span>
+            <span class="badge ${(t.status||'PENDING').toLowerCase()}">${t.status || 'PENDING'}</span>
+            <span class="ticket-time">${timeAgo(t.created_at)}</span>
+            ${t.cost ? `<span class="ticket-cost">₹ ${escape(t.cost)}</span>` : ''}
+            ${t.availability ? `<span class="ticket-time">⏱ ${escape(t.availability)}</span>` : ''}
+          </div>
+          <button class="expand-btn" onclick="toggleExpand(${t.id})">▸ details</button>
+          <div class="ticket-detail" id="detail-${t.id}">
+            ${t.description ? `<strong>Message:</strong> ${escape(t.description)}<br/>` : ''}
+            ${t.task        ? `<strong>Task:</strong> ${escape(t.task)}<br/>` : ''}
+            ${t.cost        ? `<strong>Budget:</strong> ${escape(t.cost)}<br/>` : ''}
+            ${t.availability? `<strong>Availability:</strong> ${escape(t.availability)}<br/>` : ''}
+            ${t.closed_by   ? `<strong>Closed by:</strong> ${escape(t.closed_by)}<br/>` : ''}
+            ${t.closed_at   ? `<strong>Closed at:</strong> ${new Date(t.closed_at).toLocaleString()}<br/>` : ''}
+            <strong>Created:</strong> ${new Date(t.created_at).toLocaleString()}
+          </div>
+        </div>
+
+        <div class="ticket-actions">
+          ${t.status === 'PENDING'
+            ? `<button class="btn-close" onclick="closeTicket(${t.id}, this)">close ✕</button>`
+            : `<div class="closed-label">✓ closed</div>
+               ${t.closed_by ? `<div class="closed-by">by ${escape(t.closed_by)}</div>` : ''}
+               <div class="ticket-time">${timeAgo(t.closed_at)}</div>`
+          }
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escape(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function toggleExpand(id) {
+    const ticket = document.getElementById('ticket-' + id);
+    const detail = document.getElementById('detail-' + id);
+    const btn    = ticket.querySelector('.expand-btn');
+    const open   = ticket.classList.toggle('expanded');
+    btn.textContent = open ? '▾ details' : '▸ details';
+  }
+
+  async function closeTicket(id, btn) {
+    btn.disabled    = true;
+    btn.textContent = 'closing...';
+    clearError();
+    try {
+      const res = await fetch(`${API_BASE}/tickets/${id}/close`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ closedBy: 'admin' })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const t = allTickets.find(x => x.id === id);
+      if (t) {
+        t.status    = 'CLOSED';
+        t.closed_at = new Date().toISOString();
+        t.closed_by = 'admin';
+      }
+      updateStats(allTickets);
+      renderTickets();
+    } catch (e) {
+      btn.disabled    = false;
+      btn.textContent = 'close ✕';
+      showError('Could not close ticket #' + id + ' — ' + e.message);
+    }
+  }
+
+  async function loadTickets() {
+    clearError();
+    try {
+      const res = await fetch(`${API_BASE}/tickets`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      allTickets = await res.json();
+      updateStats(allTickets);
+      renderTickets();
+    } catch (e) {
+      document.getElementById('ticket-list').innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">✕</div>
+          cannot reach backend — is rajcv-backend running?<br/>
+          <small style="color:var(--dim);margin-top:8px;display:block">${e.message}</small>
+        </div>`;
+      showError('Backend not reachable. Check that rajcv-backend is running and /tickets route exists in server.js');
+    }
+  }
+
+  loadTickets();
+  setInterval(loadTickets, 30000);
+</script>
+</body>
+</html>

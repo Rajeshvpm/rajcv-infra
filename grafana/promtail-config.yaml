@@ -15,6 +15,7 @@ scrape_configs:
           - localhost
         labels:
           job: docker
+          service_name: docker
           __path__: /var/lib/docker/containers/*/*-json.log
     pipeline_stages:
       - json:
@@ -27,3 +28,29 @@ scrape_configs:
           source: time
       - output:
           source: output
+
+  - job_name: nginx
+    static_configs:
+      - targets:
+          - localhost
+        labels:
+          job: nginx
+          container: rajcv-nginx
+          __path__: /var/log/nginx/access.log
+    pipeline_stages:
+      - json:
+          expressions:
+            status: status
+            request_uri: request_uri
+            request_time: request_time
+            request_method: request_method
+            client_ip: http_x_forwarded_for
+      - geoip:
+          db: /etc/promtail/GeoLite2-City.mmdb
+          source: client_ip
+          db_type: city
+      - labels:
+          status:
+          request_uri:
+          geoip_country_name:
+          geoip_city_name:

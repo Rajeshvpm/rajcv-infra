@@ -1,85 +1,155 @@
 const express = require('express');
-const nodemailer = require('nodemailer');
+const { Pool } = require('pg');
+const { Kafka } = require('kafkajs');
+
 const app = express();
-// This allows the server to read the JSON data sent from your HTML page
 app.use(express.json());
+app.use(express.static('/app'));
 
-// --- CONFIGURATION SECTION ---
-const GMAIL_USER = 'rajesh.cs225@gmail.com';
-const GMAIL_PASS = 'yhom vnwc hzvv ukkf'; // Your 16-character Gmail App Password
-
-const MAIL_FOR_RAJESH = 'gammu661996@gmail.com'; // Special mail for name "Rajesh"
-const MAIL_FOR_ID_1 = 'rajesh.cs225@gmail.com';    // Default for ID 1
-// ------------------------------
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: GMAIL_USER,
-        pass: GMAIL_PASS
-    }
+// --- POSTGRES ---
+const db = new Pool({
+  host: 'rajcv-postgres',
+  port: 5432,
+  database: 'rajcv_services',
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
 });
-app.post('/submit', (req, res) => {
-    // We only extract the actual data fields now
-    const { name, task, cost, availability, description } = req.body;
 
-    let targetEmail = "";
-    let emailSubject = "";
-    let emailBody = "";
+// --- KAFKA ---
+const kafka = new Kafka({
+  brokers: ['kafka:9092'],
+  clientId: 'rajcv-backend'
+});
+const producer = kafka.producer();
 
-    // --- LOGIC: CHOOSE RECIPIENT ---
-    if (name && name.toLowerCase() === 'rajesh') {
-        targetEmail = MAIL_FOR_RAJESH;
-    } else {
-        // Otherwise, it's a general help request
-        targetEmail = MAIL_FOR_ID_1;
-    }
+producer.connect()
+  .then(() => console.log('Kafka producer connected'))
+  .catch(err => console.error('Kafka producer failed:', err.message));
 
-    // --- LOGIC: FORMAT CONTENT ---
-    if (task) {
-        emailSubject = `Service Request Raised by ${name}`;
-        emailBody = `
-Hi ,
+// --- HELPERS ---
+const MAIL_FOR_RAJESH = 'gammu661996@gmail.com';
+const MAIL_FOR_DEFAULT = 'rajesh.cs225@gmail.com';
 
-You have received a new  Service request.
+function log(requestId, stage, data) {
+  console.log(JSON.stringify({
+    ts: new Date().toISOString(),
+    requestId,
+    stage,
+    ...data
+  }));
+}
 
-Details:
-------------------------------------------
-Request Raised by : ${name}
-Service Tasks : ${task}
-Budget/Cost    : ${cost}
-Preferred Time : ${availability}
-------------------------------------------
+// ── SUBMIT ROUTE ──────────────────────────────────────────
+app.post('/submit', async (req, res) => {
+  const requestId = Date.now().toString(36).toUpperCase();
+  const { name, task, cost, availability, description } = req.body;
 
-Sent via rajcv.online
-        `;
-    } else {
-        emailSubject = `New Favour/Help Request from ${name}`;
-        emailBody = `
-Hi ,
+  log(requestId, 'REQUEST_RECEIVED', { name, task });
 
-${name} has reached out for a favour or help.
+  // Determine recipient
+  const targetEmail = (name && name.toLowerCase() === 'rajesh')
+    ? MAIL_FOR_RAJESH
+    : MAIL_FOR_DEFAULT;
 
-Message Content:
-------------------------------------------
-"${description}"
-------------------------------------------
+  const type = task ? 'service' : 'favour';
 
-Sent via rajcv.online
-        `;
-    }
+  const emailSubject = task
+    ? `Service Request Raised by ${name}`
+    : `New Favour/Help Request from ${name}`;
 
-    const mailOptions = {
-        from: GMAIL_USER,
-        to: targetEmail,
-        subject: emailSubject,
-        text: emailBody
-    };
+  const emailBody = task
+    ? `Hi,\nNew Service Request.\n\nFrom: ${name}\nTask: ${task}\nBudget: ${cost}\nTime: ${availability}\n\nSent via rajcv.online`
+    : `Hi,\n${name} needs help.\n\nMessage: "${description}"\n\nSent via rajcv.online`;
 
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) return res.status(500).send("Error sending mail");
-        res.status(200).send("Success");
+  // 1. SAVE TO DB
+  let ticketId = null;
+  try {
+    const result = await db.query(
+      `INSERT INTO service_requests
+        (name, type, task, cost, availability, description, target_email, status)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'PENDING') RETURNING id`,
+      [name, type, task||null, cost||null, availability||null, description||null, targetEmail]
+    );
+    ticketId = result.rows[0].id;
+    log(requestId, 'DB_SAVED', { ticketId });
+  } catch (err) {
+    log(requestId, 'DB_FAILED', { error: err.message });
+  }
+
+  // 2. PUBLISH TO KAFKA → consumer will send the email
+  try {
+    await producer.send({
+      topic: 'service.request.created',
+      messages: [{
+        key: String(ticketId || Date.now()),
+        value: JSON.stringify({
+          ticketId,
+          name,
+          type,
+          task,
+          cost,
+          availability,
+          description,
+          targetEmail,
+          emailSubject,
+          emailBody,
+          createdAt: new Date().toISOString()
+        })
+      }]
     });
+    log(requestId, 'KAFKA_PUBLISHED', { ticketId, topic: 'service.request.created' });
+  } catch (err) {
+    log(requestId, 'KAFKA_FAILED', { error: err.message });
+    // No fallback — consumer handles all emails now
+  }
+
+  res.status(200).json({ success: true, ticketId });
 });
 
-app.listen(5000, () => console.log('Backend server running on port 5000'));
+// ── GET ALL TICKETS ───────────────────────────────────────
+app.get('/tickets', async (req, res) => {
+  const { status } = req.query;
+  try {
+    const query = status
+      ? `SELECT * FROM service_requests WHERE status=$1 ORDER BY created_at DESC`
+      : `SELECT * FROM service_requests ORDER BY created_at DESC`;
+    const result = await db.query(query, status ? [status] : []);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── CLOSE A TICKET ────────────────────────────────────────
+app.patch('/tickets/:id/close', async (req, res) => {
+  const { id } = req.params;
+  const { closedBy } = req.body;
+  try {
+    await db.query(
+      `UPDATE service_requests
+       SET status='CLOSED', closed_at=NOW(), closed_by=$1
+       WHERE id=$2`,
+      [closedBy || 'admin', id]
+    );
+
+    // Publish to Kafka → consumer sends resolution email
+    await producer.send({
+      topic: 'service.request.closed',
+      messages: [{
+        key: String(id),
+        value: JSON.stringify({
+          ticketId: id,
+          closedBy: closedBy || 'admin',
+          closedAt: new Date().toISOString()
+        })
+      }]
+    });
+
+    log('CLOSE', 'TICKET_CLOSED', { ticketId: id });
+    res.json({ success: true, message: `Ticket #${id} closed` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(3000, () => console.log('Server running on port 3000'));

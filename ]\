@@ -1,0 +1,91 @@
+theme: dark
+# Deprecated: 'server: host/port' moved to 'server: address'
+server:
+  address: 'tcp://0.0.0.0:9091/'
+
+log:
+  level: info
+
+# Deprecated: 'jwt_secret' moved to 'identity_validation'
+identity_validation:
+  reset_password:
+    jwt_secret: '915a0a304c635d67c8a3509eb1d6440915a50654aa58de1cb48b77c246d68b47'
+
+session:
+  name: authelia_session
+  secret: '42b0b57c6be5cdb4b436994fa09e38954c7c248380556f80f3f5a8ede9ec3389'
+  # Deprecated: 'domain' moved into the 'cookies' list
+  cookies:
+    - domain: 'rajcv.online'
+      authelia_url: 'https://auth.rajcv.online'
+      default_redirection_url: 'https://grafana.rajcv.online'
+  redis:
+    host: authelia_redis
+    port: 6379
+
+storage:
+  # ERROR FIX: You were missing the encryption_key (Required in v4.38)
+  encryption_key: '12b71d8a5d9ce224d96059674eec0ef81776168d555fb2b1cfb3700932689cdf'
+  local:
+    path: /config/db.sqlite3
+
+# ERROR FIX: You must define a notifier
+notifier:
+  filesystem:
+    filename: /config/notification.txt
+
+authentication_backend:
+  file:
+    path: /config/users_database.yml
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: auth.rajcv.online
+      policy: bypass
+    - domain: grafana.rajcv.online
+      policy: one_factor
+
+identity_providers:
+  oidc:
+    hmac_secret: '830105f969e7654ac534c2c81b1c9577fea526f1bbf381315fc556c92476844c'
+    # ERROR FIX: Use the 'jwks' format instead of 'issuer_private_key'
+    jwks:
+      - key: |
+          -----BEGIN PRIVATE KEY-----
+          MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDlqQSXOe/5miky
+          Dnmw/gcQAlzK9mj/a19oziksz6ijGbXOGdFOQ8cQSuDxAAyC61vtkF+7CfmYNIuP
+          D3zeMoeWGximEx79o07uz+vtWXjSbe9TV3hrkaCHs7Ra14txDZeveI5WLjgdelyF
+          x3S0YI3f4f6L4nT4FkOCjJQrtr1z8ugcnUQKLYYOX6fJx9mnDESIPSoWCPNf0aUi
+          s9sGBp+CBSQLp8OXagy1Q6p4beqhH18TeG6Y4a4UchWCmcsHDKPYvgYM2HAn/dJA
+          cLyShNlkbYUk9s4slbpnXCnT88LPgNvMXMiHvNhxvzSfN58AxE8k791SMM9J/s7h
+          us1VSTK5AgMBAAECggEAQnHZGyuvC2cXvhzEBnoobvBQCoSqMiPNkdP7w7Q81Rtu
+          Jzf+/4bKhCM122QpOoN/sEbR+5pSNUAWlIhllx/FbJ9gTURA9h8Wii9r0drOAwu9
+          bz5iX7TdXgWXC6VK+aV2GlVl0PdEUvsA48+mKz24LmsDK1OUheZjF9U2VUNkorO7
+          MWVKWNM4wZAxayFjhJchEsLSLn3tqj5NVBQcd3SmgJiJL0DEbXVr0rN6hLgeqHE2
+          uL+Am2AtS0IDw5wB4I/egPBccPrnbDB9ocelVyZbCMkanm4K2Y8QFMemwGkfevun
+          7riqhRODHbq6C7eOdoJKnawSlnYN+prOFm78dIbTJQKBgQD3Fz6dVDSg3NaHQAET
+          4cKKQ4trvLe2uYRYKshSnKgaWQZrBT3ENGaFxm+mj4dX+6sLZ93/v1vAejFYwTGW
+          1l5msNzYs0g1HGlPiiJQ8bFD58zwohYOL38mDpSAjWEz/vlpg7vtcLHQJEBFk7Vc
+          lJfw9U516TnOykuoCuaeHLiS+wKBgQDt8OGvjXzE4zb4qgitd+qPkJ01bU+4/sN4
+          feboc/BxnstP+TlNaIY+ak7SLnOFt8cMNTvFGSh9SsQXlaAGjDk4rQg+vCxGPJPu
+          tMbkSwCRbztlKwrbZt9x02qu9XwbRKcbvBIaL35iwkIPGtMk1xEzkAjgCa1DztIn
+          szYOvkCC2wKBgQCRPcWdf1DMOeOUbufzQuIymc+LTcwDiXskxEkqXlFl42ylXdhX
+          y6F0AxfAJWAeNJ3vP2e8HESXmHwHOtCmZG3rGQ1IB+Jq7b9tdLoFMHzNeKT70Zr7
+          TaoEuc9K3VAE21zKTBgcUwECYzywaUnTGLlTdy5emvBTAJCGP5od2K4aHwKBgQCH
+          EvvLgPKXgrUuLLiIYU7S+TGFpuxfBKFKwY5X35lbpt2cJMsW2oN64zajsqL6Af4J
+          PB8WINYPamYvTU1u6iOBvRi1JHWt2a3REObnqnxEE3UQVYLwUlH+eBpUAB/YCv0i
+          jX1pSBTjU4vUr1G11DF7qAShylyF5d7/kojZjb9piQKBgQCB/9tqdTw3YLQ8Hho3
+          yFn83gOVxCmYnlh/2mIhnPsnoiMLexxaaEze0UBIDd8ZS31RBw/NTuf8vFDBb/ya
+          x9M9xQ/B4Bhwfi5qH+4IP90uQF3Lk8SsVi4fy/NKRdl1bQQLAAATH3RWcLi4dvMj
+          YitYJvL8tbRU7s3c+lCT64Ja/g==
+          -----END PRIVATE KEY-----
+    clients:
+      - client_id: cloudflare-access # Deprecated: 'id' -> 'client_id'
+        client_secret: '$argon2id$v=19$m=65536,t=3,p=4$qcAkQ5kprPpLrpE8LHziGg$sm+2de4kb+5Z0WIeRcAjTIKbPUaZX5XAohxI2Ds3DQc' # -> 'client_secret'
+        public: false
+        authorization_policy: one_factor
+        redirect_uris:
+          - https://rajinfra.cloudflareaccess.com/cdn-cgi/access/callback
+        scopes: [openid, profile, email, groups]
+        userinfo_signing_algorithm: none

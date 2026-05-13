@@ -1,679 +1,778 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rajesh P - Cloud Operations Engineer</title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        /* Custom Colors for the new design */
-        :root {
-            --color-primary: #1e293b; /* Dark Slate for text */
-            --color-circle-orange: #f97316; /* Bright Orange */
-            --color-circle-red: #ef4444; /* Bright Red */
-            --color-circle-cyan: #06b6d4; /* Bright Cyan - Used for Chatbot/Action */
-            --color-llm-action: #10b981; /* Emerald Green for LLM action */
-        }
-        
-        body {
-            background-color: #f7f7f7; /* Very light gray background */
-            font-family: 'Inter', sans-serif;
-            min-height: 100vh;
-        }
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rajesh P — Cloud Operations Engineer/Sre</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;
+  --bg2:#111;
+  --bg3:#161616;
+  --border:#222;
+  --border2:#2a2a2a;
+  --text:#f0f0f0;
+  --muted:#888;
+  --dim:#444;
+  --accent:#00e5a0;
+  --accent2:#00b87a;
+  --accent-dim:rgba(0,229,160,0.08);
+  --accent-glow:rgba(0,229,160,0.15);
+  --orange:#ff6b35;
+  --blue:#4da6ff;
+  --mono:'DM Mono',monospace;
+  --sans:'DM Sans',sans-serif;
+  --display:'Syne',sans-serif;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;line-height:1.7;overflow-x:hidden}
 
-        /* --- Chatbot Styles --- */
-        #chat-messages::-webkit-scrollbar-thumb { background-color: var(--color-circle-cyan); }
-        #chatbot {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 90%;
-            max-width: 320px; /* Adjusted: Smaller width */
-            height: 450px; /* Adjusted: Smaller height */
-            z-index: 1000;
-            display: none;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            overflow: hidden;
-        }
+/* ── NOISE TEXTURE OVERLAY ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:0.4;
+}
 
-        @media (max-width: 640px) {
-            #chatbot {
-                bottom: 10px;
-                right: 10px;
-                width: calc(100% - 20px);
-                max-width: none;
-                height: 60vh; /* Adjusted: Smaller mobile height */
-            }
-        }
-        
-        #toggle-chat {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 1001;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            font-weight: 600;
-            background-color: var(--color-circle-cyan);
-        }
+/* ── LAYOUT ── */
+.page{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 2rem}
 
-        #chat-header {
-            background-color: var(--color-circle-cyan);
-        }
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,10,10,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 2rem;
+}
+.nav-inner{
+  max-width:1100px;margin:0 auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:56px;
+}
+.nav-logo{
+  font-family:var(--mono);font-size:13px;font-weight:500;
+  color:var(--accent);letter-spacing:0.05em;
+}
+.nav-logo span{color:var(--dim)}
+.nav-links{display:flex;gap:2rem}
+.nav-links a{
+  font-family:var(--mono);font-size:11px;
+  letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  transition:color 0.15s;
+}
+.nav-links a:hover{color:var(--accent)}
 
-        #send-btn {
-            background-color: var(--color-circle-cyan);
-        }
+/* ── HERO ── */
+.hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding:6rem 0 4rem;
+  position:relative;
+}
+.hero-grid{display:grid;grid-template-columns:1fr 340px;gap:4rem;align-items:center}
+.hero-tag{
+  font-family:var(--mono);font-size:11px;
+  letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:1.5rem;
+  display:flex;align-items:center;gap:8px;
+}
+.hero-tag::before{
+  content:'';display:inline-block;width:24px;height:1px;background:var(--accent);
+}
+.hero-name{
+  font-family:var(--display);font-size:clamp(52px,7vw,88px);
+  font-weight:800;line-height:1;letter-spacing:-0.03em;
+  color:var(--text);margin-bottom:0.5rem;
+}
+.hero-role{
+  font-family:var(--display);font-size:clamp(18px,3vw,26px);
+  font-weight:500;color:var(--muted);margin-bottom:2rem;
+  letter-spacing:-0.01em;
+}
+.hero-role em{color:var(--accent);font-style:normal}
+.hero-summary{
+  font-size:15px;color:var(--muted);line-height:1.8;
+  max-width:560px;margin-bottom:2.5rem;
+  border-left:2px solid var(--accent);padding-left:1.25rem;
+}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap}
+.btn{
+  font-family:var(--mono);font-size:12px;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:10px 20px;border-radius:4px;
+  text-decoration:none;transition:all 0.15s;
+  cursor:pointer;border:none;
+}
+.btn-primary{
+  background:var(--accent);color:#000;font-weight:500;
+}
+.btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}
+.btn-outline{
+  background:transparent;color:var(--text);
+  border:1px solid var(--border2);
+}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
 
-        .chat-message-bot {
-            background-color: #cffafe;
-            border-radius: 10px 10px 10px 0;
-            padding: 8px 12px;
-            max-width: 85%;
-            align-self: flex-start;
-        }
+/* ── PHOTO ── */
+.hero-photo-wrap{position:relative}
+.hero-photo{
+  width:100%;aspect-ratio:1;border-radius:12px;
+  overflow:hidden;border:1px solid var(--border2);
+  position:relative;
+}
+.hero-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.hero-photo::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 50%,rgba(10,10,10,0.6) 100%);
+}
+.photo-badge{
+  position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:100px;padding:6px 16px;
+  font-family:var(--mono);font-size:11px;
+  color:var(--accent);white-space:nowrap;
+  display:flex;align-items:center;gap:6px;
+}
+.photo-badge::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--accent);animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
 
-        .chat-message-user {
-            background-color: #e0f2f1;
-            border-radius: 10px 10px 0 10px;
-            padding: 8px 12px;
-            max-width: 85%;
-            align-self: flex-end;
-        }
+/* ── STATS BAR ── */
+.stats-bar{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--border);border-radius:8px;
+  overflow:hidden;margin:5rem 0;
+}
+.stat-item{
+  background:var(--bg2);padding:1.5rem 1.25rem;
+  border-right:1px solid var(--border);
+  transition:background 0.15s;
+}
+.stat-item:last-child{border-right:none}
+.stat-item:hover{background:var(--bg3)}
+.stat-num{
+  font-family:var(--display);font-size:36px;
+  font-weight:800;color:var(--accent);
+  line-height:1;margin-bottom:4px;
+}
+.stat-label{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--muted);
+}
 
-        /* --- New Design Styles --- */
-        .wix-container {
-            min-height: calc(100vh - 80px); /* Account for footer height */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 40px 16px;
-        }
+/* ── SECTION ── */
+section{padding:5rem 0}
+.section-tag{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:0.15em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:0.75rem;
+}
+.section-title{
+  font-family:var(--display);font-size:clamp(28px,4vw,42px);
+  font-weight:800;letter-spacing:-0.02em;
+  color:var(--text);margin-bottom:3rem;
+  line-height:1.1;
+}
+.section-title span{color:var(--accent)}
 
-        .profile-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            max-width: 900px;
-            width: 100%;
-        }
+/* ── EXPERIENCE ── */
+.exp-list{display:flex;flex-direction:column;gap:2px}
+.exp-item{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;overflow:hidden;
+  transition:border-color 0.2s;
+}
+.exp-item:hover{border-color:var(--border2)}
+.exp-header{
+  display:grid;grid-template-columns:1fr auto;
+  align-items:start;gap:1rem;
+  padding:1.5rem 1.75rem;cursor:pointer;
+}
+.exp-title{
+  font-family:var(--display);font-size:18px;
+  font-weight:700;color:var(--text);margin-bottom:4px;
+}
+.exp-company{
+  font-family:var(--mono);font-size:12px;
+  color:var(--accent);
+}
+.exp-dates{
+  font-family:var(--mono);font-size:11px;
+  color:var(--muted);text-align:right;white-space:nowrap;
+}
+.exp-body{
+  padding:0 1.75rem 1.5rem;
+  display:none;
+}
+.exp-body.open{display:block}
+.exp-body ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+.exp-body li{
+  font-size:13.5px;color:var(--muted);
+  padding-left:1.25rem;position:relative;line-height:1.65;
+}
+.exp-body li::before{
+  content:'→';position:absolute;left:0;
+  color:var(--accent);font-family:var(--mono);font-size:11px;
+  top:2px;
+}
+.exp-toggle{
+  font-family:var(--mono);font-size:11px;
+  color:var(--dim);margin-top:0.5rem;
+  cursor:pointer;letter-spacing:0.05em;
+}
 
-        @media (min-width: 768px) {
-            .profile-card {
-                flex-direction: row;
-                text-align: left;
-            }
-        }
-        
-        .profile-image-container {
-            width: 250px;
-            height: 250px;
-            border-radius: 50%;
-            overflow: hidden;
-            background-color: #e0e0e0;
-            margin-bottom: 2rem;
-            flex-shrink: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #ddd;
-            cursor: pointer; /* Indicate it's clickable */
-            position: relative;
-        }
-        .profile-image-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        /* Circular Navigation Buttons */
-        .nav-circle {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            color: white;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-align: center;
-            line-height: 1.2;
-            font-size: 14px;
-        }
-        .nav-circle:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
+/* ── PROJECTS ── */
+.projects-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.project-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1.75rem;
+  transition:all 0.2s;position:relative;overflow:hidden;
+}
+.project-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--accent),transparent);
+  opacity:0;transition:opacity 0.2s;
+}
+.project-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.project-card:hover::before{opacity:1}
+.project-card.featured{
+  grid-column:1/-1;
+  background:linear-gradient(135deg,var(--bg2) 0%,rgba(0,229,160,0.04) 100%);
+  border-color:rgba(0,229,160,0.2);
+}
+.project-tag{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:0.75rem;
+  display:flex;align-items:center;gap:6px;
+}
+.project-name{
+  font-family:var(--display);font-size:20px;
+  font-weight:700;color:var(--text);margin-bottom:0.5rem;
+}
+.project-desc{
+  font-size:13px;color:var(--muted);
+  line-height:1.7;margin-bottom:1.25rem;
+}
+.project-stack{display:flex;flex-wrap:wrap;gap:6px}
+.stack-tag{
+  font-family:var(--mono);font-size:10px;
+  padding:3px 8px;border-radius:3px;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--muted);letter-spacing:0.05em;
+}
+.project-metrics{
+  display:flex;gap:1.5rem;margin-bottom:1rem;flex-wrap:wrap;
+}
+.metric{
+  display:flex;flex-direction:column;
+}
+.metric-val{
+  font-family:var(--mono);font-size:20px;
+  font-weight:500;color:var(--accent);
+}
+.metric-label{
+  font-family:var(--mono);font-size:10px;
+  color:var(--dim);letter-spacing:0.08em;text-transform:uppercase;
+}
+.project-link{
+  font-family:var(--mono);font-size:11px;
+  color:var(--accent);text-decoration:none;
+  letter-spacing:0.05em;
+}
+.project-link:hover{color:#00ffb3}
 
-        /* Footer styles */
-        .wix-footer {
-            border-top: 1px solid #ddd;
-            padding: 20px 0;
-            color: #555;
-            font-size: 12px;
-        }
+/* ── SKILLS ── */
+.skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.skill-group{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:8px;padding:1.25rem;
+}
+.skill-group-name{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:0.12em;text-transform:uppercase;
+  color:var(--accent);margin-bottom:0.75rem;
+}
+.skill-tags{display:flex;flex-wrap:wrap;gap:5px}
+.skill-tag{
+  font-size:12px;color:var(--muted);
+  background:var(--bg3);border:1px solid var(--border2);
+  padding:3px 10px;border-radius:100px;
+  transition:all 0.15s;
+}
+.skill-tag:hover{border-color:var(--accent);color:var(--accent)}
 
-        /* LLM Draft Box */
-        #llm-output-box {
-            background-color: #f0fdf4; /* Light Green Background */
-            border-left: 5px solid var(--color-llm-action);
-            padding: 1rem;
-            margin-top: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-    </style>
+/* ── CONTACT ── */
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start}
+.contact-info{display:flex;flex-direction:column;gap:1rem}
+.contact-row{
+  display:flex;align-items:center;gap:12px;
+  padding:1rem 1.25rem;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:6px;text-decoration:none;
+  transition:all 0.15s;
+}
+.contact-row:hover{border-color:var(--accent);background:var(--accent-dim)}
+.contact-label{
+  font-family:var(--mono);font-size:10px;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--dim);display:block;margin-bottom:2px;
+}
+.contact-val{font-size:13px;color:var(--text)}
+.contact-icon{font-size:18px;color:var(--accent);flex-shrink:0}
+.services-cta{
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));
+  border:1px solid rgba(0,229,160,0.2);
+  border-radius:8px;padding:2rem;
+}
+.services-cta h3{
+  font-family:var(--display);font-size:22px;
+  font-weight:700;color:var(--text);margin-bottom:0.75rem;
+}
+.services-cta p{font-size:13px;color:var(--muted);margin-bottom:1.5rem;line-height:1.7}
+
+/* ── FOOTER ── */
+footer{
+  border-top:1px solid var(--border);
+  padding:2rem 0;margin-top:2rem;
+}
+.footer-inner{
+  max-width:1100px;margin:0 auto;padding:0 2rem;
+  display:flex;justify-content:space-between;align-items:center;
+  flex-wrap:wrap;gap:1rem;
+}
+.footer-left{
+  font-family:var(--mono);font-size:11px;color:var(--dim);
+}
+.footer-left strong{color:var(--muted)}
+.footer-links{display:flex;gap:1.5rem}
+.footer-links a{
+  font-family:var(--mono);font-size:11px;
+  color:var(--dim);text-decoration:none;
+  transition:color 0.15s;
+}
+.footer-links a:hover{color:var(--accent)}
+
+/* ── ANIMATIONS ── */
+.fade-in{opacity:0;transform:translateY(20px);animation:fadeUp 0.6s ease forwards}
+.fade-in:nth-child(1){animation-delay:0.1s}
+.fade-in:nth-child(2){animation-delay:0.2s}
+.fade-in:nth-child(3){animation-delay:0.3s}
+.fade-in:nth-child(4){animation-delay:0.4s}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .hero-grid{grid-template-columns:1fr;gap:3rem}
+  .hero-photo-wrap{order:-1;max-width:240px;margin:0 auto}
+  .stats-bar{grid-template-columns:1fr 1fr}
+  .stat-item:nth-child(2){border-right:none}
+  .stat-item:nth-child(3){border-top:1px solid var(--border)}
+  .projects-grid{grid-template-columns:1fr}
+  .project-card.featured{grid-column:auto}
+  .skills-grid{grid-template-columns:1fr 1fr}
+  .contact-grid{grid-template-columns:1fr}
+  .nav-links{display:none}
+}
+@media(max-width:480px){
+  .skills-grid{grid-template-columns:1fr}
+  .stats-bar{grid-template-columns:1fr 1fr}
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+</style>
 </head>
 <body>
 
-    <!-- Hidden Input for Photo Upload -->
-    <input type="file" id="profile-upload-input" accept="image/*" class="hidden">
-
-    <!-- Main Content Area -->
-    <div class="wix-container">
-        <div class="profile-card">
-            
-            <!-- Left Side: Image (Clickable for upload) -->
-            <div id="profile-image-container" class="profile-image-container mr-0 md:mr-16">
-                <!-- Image source updated to local file reference IMG_0548.JPG -->
-                <img id="profile-image" src="IMG_0548.JPG" alt="Profile photo of Rajesh P">
-            </div>
-
-            <!-- Right Side: Text & Navigation -->
-            <div class="flex flex-col items-center md:items-start text-center md:text-left">
-                <h1 class="text-6xl font-extrabold text-gray-900 mb-4">Hello</h1>
-                
-                <div class="mb-8 max-w-lg">
-                    <h2 class="text-xl font-bold text-gray-800 mb-2">A Bit About Me</h2>
-                    <p id="profile-summary" class="text-gray-600 leading-relaxed">
-                        Loading profile summary...
-                    </p>
-                </div>
-                
-                <!-- Circular Navigation -->
-                <div class="flex space-x-4 mb-8">
-                    <button id="nav-resume" class="nav-circle" style="background-color: var(--color-circle-orange);">
-                        <span class="p-2">Experience</span>
-                    </button>
-                    <button id="nav-skills" class="nav-circle" style="background-color: var(--color-circle-red);">
-                        <span class="p-2">Skills</span>
-                    </button>
-                    <button id="nav-contact" class="nav-circle" style="background-color: var(--color-circle-cyan);">
-                        <span class="p-2">Contact</span>
-                    </button>
-                </div>
-                
-                <!-- LLM Action Button -->
-                <div class="w-full max-w-lg">
-                    <button id="generate-draft-btn" class="w-full bg-emerald-500 text-white font-bold py-3 px-6 rounded-full shadow-lg hover:bg-emerald-600 transition duration-300 flex items-center justify-center disabled:opacity-50" disabled>
-                        <i data-lucide="sparkles" class="w-5 h-5 mr-2"></i>
-                        <span id="llm-button-text">✨ Generate Draft Cover Letter Summary ✨</span>
-                    </button>
-                </div>
-
-                <!-- LLM Output Box -->
-                <div id="llm-output-box" class="w-full max-w-lg mt-8 hidden">
-                    <h3 class="font-bold text-lg text-emerald-700 mb-2 flex items-center">
-                        <i data-lucide="mail-check" class="w-5 h-5 mr-2"></i>
-                        Generated Cover Letter Draft
-                    </h3>
-                    <p id="llm-output-text" class="text-gray-700 whitespace-pre-wrap"></p>
-                </div>
-            </div>
-        </div>
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-logo">rajesh.p<span>/</span>sre</div>
+    <div class="nav-links">
+      <a href="#experience">Experience</a>
+      <a href="#projects">Projects</a>
+      <a href="#skills">Skills</a>
+      <a href="#contact">Contact</a>
     </div>
-    
-    <!-- Footer Section -->
-    <footer class="wix-footer text-center">
-        <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center px-4">
-            <div class="flex space-x-6 mb-2 sm:mb-0">
-                <div><span class="font-semibold">Phone</span><br>9789338733</div>
-                <div><span class="font-semibold">Email</span><br>rajesh.p.message@gmail.com</div>
-            </div>
-            <div class="flex space-x-3 items-center">
-                <span class="font-semibold">Follow Me</span>
-                <a href="https://www.linkedin.com/in/contact-rajesh" target="_blank" aria-label="LinkedIn Profile">
-                    <i data-lucide="linkedin" class="w-4 h-4 hover:text-gray-800 cursor-pointer"></i>
-                </a>
-                <a href="https://github.com/rajesh-post" target="_blank" aria-label="GitHub Profile">
-                    <i data-lucide="github" class="w-4 h-4 hover:text-gray-800 cursor-pointer"></i>
-                </a>
-            </div>
-            <div class="mt-2 sm:mt-0">
-                <!-- Cleaned footer line -->
-                © 2025 By Rajesh P
-            </div>
-        </div>
-    </footer>
+  </div>
+</nav>
 
-
-    <!-- Chatbot UI -->
-    <div id="chatbot" class="flex flex-col bg-white border border-gray-300">
-        <div id="chat-header" class="flex justify-between items-center p-3 text-white font-bold text-lg cursor-pointer">
-            <span class="flex items-center">
-                <i data-lucide="bot" class="w-5 h-5 mr-2"></i>
-                Resume Assistant
-            </span>
-            <button id="close-chat" class="text-xl leading-none p-1 hover:text-gray-200">&times;</button>
+<!-- HERO -->
+<div class="page">
+  <section class="hero" id="home">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-tag fade-in">Available for SRE / Platform Engineering roles</div>
+        <h1 class="hero-name fade-in">Rajesh P</h1>
+        <p class="hero-role fade-in">Site Reliability Engineer<br/><em>→ Targeting Google SRE</em></p>
+        <p class="hero-summary fade-in">
+          4+ years building and maintaining highly available distributed systems at scale.
+          99.99% uptime SLA. Kafka clusters, multi-datacenter infrastructure, automation-first mindset.
+          Reducing toil, eliminating MTTR, driving reliability through code.
+        </p>
+        <div class="hero-cta fade-in">
+          <a href="#projects" class="btn btn-primary">View Projects</a>
+          <a href="#contact" class="btn btn-outline">Get In Touch</a>
+          <a href="https://github.com/rajesh-post" target="_blank" class="btn btn-outline">GitHub ↗</a>
         </div>
-        <div id="chat-messages" class="flex-grow p-4 space-y-3 overflow-y-auto bg-gray-50">
-            <!-- Initial welcome message -->
-            <div class="chat-message-bot">
-                Hello! I'm the Resume Assistant for **Rajesh P**. I can help you quickly find information about his experience, skills, and projects. Try asking about **skills**, **experience**, or the **summary**.
-            </div>
+      </div>
+      <div class="hero-photo-wrap fade-in">
+        <div class="hero-photo">
+          <img src="IMG_0548.JPG" alt="Rajesh P — Site Reliability Engineer"/>
         </div>
-        <div id="chat-input" class="p-3 border-t border-gray-200 flex space-x-2 bg-white">
-            <input type="text" id="user-input" placeholder="Ask about Rajesh's resume..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-cyan-500 focus:border-cyan-500 text-sm">
-            <button id="send-btn" class="text-white p-2 rounded-lg hover:opacity-80 transition duration-150 flex items-center justify-center disabled:opacity-50" disabled>
-                <i data-lucide="send" class="w-4 h-4"></i>
-            </button>
-        </div>
+        <div class="photo-badge">Open to Opportunities</div>
+      </div>
     </div>
-    
-    <!-- Chatbot Toggle Button -->
-    <button id="toggle-chat" class="text-white p-3 rounded-full hover:opacity-80 transition duration-200">
-        <i data-lucide="message-square" class="w-5 h-5"></i>
-    </button>
+  </section>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-item">
+      <div class="stat-num">4+</div>
+      <div class="stat-label">Years Experience</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">99.99<span style="font-size:20px">%</span></div>
+      <div class="stat-label">Uptime SLA Maintained</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">30<span style="font-size:20px">%</span></div>
+      <div class="stat-label">Toil Reduced via Automation</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">20<span style="font-size:20px">%</span></div>
+      <div class="stat-label">Faster Incident Response</div>
+    </div>
+  </div>
 
-        // --- Configuration ---
-        const API_MODEL = "gemini-2.5-flash-preview-09-2025";
-        const API_KEY = ""; // Kept empty for Canvas environment
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${API_MODEL}:generateContent?key=${API_KEY}`;
-        const MAX_RETRIES = 3;
+  <!-- EXPERIENCE -->
+  <section id="experience">
+    <div class="section-tag">Career</div>
+    <h2 class="section-title">Work <span>Experience</span></h2>
+    <div class="exp-list">
 
-        // Global variables provided by the environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+      <div class="exp-item">
+        <div class="exp-header" onclick="toggleExp(this)">
+          <div>
+            <div class="exp-title">Cloud Operations Engineer</div>
+            <div class="exp-company">ZOHO Corporation</div>
+          </div>
+          <div class="exp-dates">Jan 2025 — Present<br/><span style="color:var(--accent);font-size:10px">Current Role</span></div>
+        </div>
+        <div class="exp-body open">
+          <ul>
+            <li>Provisioned and managed distributed systems including Apache Kafka messaging clusters, Hadoop data processing nodes, and Nimbus CDN servers across multi-datacenter environments</li>
+            <li>Designed NGINX L7 load balancing with L3 Keepalived multimaster failover using ExaBGP for BGP route advertisement, enabling ECMP load distribution for high availability during peak loads</li>
+            <li>Administered core network services: DNS (domain mapping, CNAME, zone files) and DHCP across multi-datacenter environments for hundreds of internal applications</li>
+            <li>Maintained 99.99% uptime SLA using Grafana, Elasticsearch, and proprietary monitoring tools — reducing incident response times by 20%</li>
+            <li>Troubleshot distributed system failures including node outages, replication lag, and network partitions across Kafka and Hadoop clusters</li>
+            <li>Developed Bash automation scripts for health monitoring, log analysis, and deployment validation — reducing operational toil by 30%</li>
+            <li>Conducted capacity planning and performance analysis, forecasting resource requirements and proactively scaling infrastructure to maintain SLO targets</li>
+            <li>Deployed FortiClient VPN with MFA and Wazuh security agents across all production servers</li>
+            <li>Participated in 24/7 on-call rotations ensuring prompt incident resolution and low MTTR</li>
+          </ul>
+          <div class="exp-toggle" onclick="toggleExp(this.closest('.exp-item').querySelector('.exp-header'))">▲ collapse</div>
+        </div>
+      </div>
 
-        // --- Firebase Initialization and Auth ---
-        let auth, db;
-        let userId = 'anonymous';
-        let isAuthReady = false;
+      <div class="exp-item">
+        <div class="exp-header" onclick="toggleExp(this)">
+          <div>
+            <div class="exp-title">Systems Engineer</div>
+            <div class="exp-company">Tata Consultancy Services (TCS)</div>
+          </div>
+          <div class="exp-dates">Dec 2021 — Jan 2025<br/><span style="color:var(--muted);font-size:10px">Chennai</span></div>
+        </div>
+        <div class="exp-body">
+          <ul>
+            <li>Managed Linux systems — setup, performance tuning, and server hardening for critical production servers</li>
+            <li>Contributed to patching automation by troubleshooting and modifying Ansible scripts, improving patching success rates by 20%</li>
+            <li>Responded to and resolved production incidents using ServiceNow for ticket management and DataDog for monitoring — identifying root causes and restoring service availability</li>
+            <li>Troubleshot DNS, NFS, SSH, and FTP issues ensuring seamless connectivity for thousands of users</li>
+            <li>Contributed to achieving 99.9% uptime by continuously monitoring Linux system performance with vSphere and DataDog</li>
+            <li>Used Git for code management integrated with CI/CD pipelines for streamlined deployment</li>
+          </ul>
+          <div class="exp-toggle" onclick="toggleExp(this.closest('.exp-item').querySelector('.exp-header'))">▲ collapse</div>
+        </div>
+      </div>
 
-        if (firebaseConfig) {
-            const app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            
-            (async () => {
-                try {
-                    if (initialAuthToken) {
-                        const userCredential = await signInWithCustomToken(auth, initialAuthToken);
-                        userId = userCredential.user.uid;
-                    } else {
-                        const userCredential = await signInAnonymously(auth);
-                        userId = userCredential.user.uid;
-                    }
-                    isAuthReady = true;
-                    console.log("Firebase Auth successful. User ID:", userId);
-                    // Enable the LLM button once auth is ready
-                    document.getElementById('generate-draft-btn').disabled = false;
-                } catch (error) {
-                    console.error("Firebase Auth failed:", error);
-                }
-            })();
-        } else {
-            console.warn("Firebase config not available. Running in non-persistent mode.");
-            // Still enable the button for Gemini functionality even without Firestore/Auth
-             document.getElementById('generate-draft-btn').disabled = false;
-        }
+      <div class="exp-item">
+        <div class="exp-header" onclick="toggleExp(this)">
+          <div>
+            <div class="exp-title">Product Consultant</div>
+            <div class="exp-company">Linz Technologies</div>
+          </div>
+          <div class="exp-dates">Apr 2021 — Dec 2021</div>
+        </div>
+        <div class="exp-body">
+          <ul>
+            <li>Implemented and supported Zoho CRM and Zoho Desk, ensuring seamless integration for enterprise clients</li>
+            <li>Collaborated directly with stakeholders to gather business requirements and customise Zoho applications</li>
+          </ul>
+          <div class="exp-toggle" onclick="toggleExp(this.closest('.exp-item').querySelector('.exp-header'))">▲ collapse</div>
+        </div>
+      </div>
 
-        // --- LLM API Utility Functions ---
+    </div>
+  </section>
 
-        async function fetchWithRetry(url, options, retries = MAX_RETRIES) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return response;
-                    }
-                    if (response.status === 429) { // Too Many Requests
-                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        continue;
-                    }
-                    // For other errors, throw to exit loop
-                    throw new Error(`API returned status ${response.status}: ${response.statusText}`);
-                } catch (error) {
-                    if (i === retries - 1) {
-                        throw new Error(`Request failed after ${retries} attempts: ${error.message}`);
-                    }
-                }
-            }
-        }
+  <!-- PROJECTS -->
+  <section id="projects">
+    <div class="section-tag">Built & Shipped</div>
+    <h2 class="section-title">Production <span>Projects</span></h2>
+    <div class="projects-grid">
 
-        async function generateCoverLetterDraft() {
-            const button = document.getElementById('generate-draft-btn');
-            const buttonText = document.getElementById('llm-button-text');
-            const outputBox = document.getElementById('llm-output-box');
-            const outputText = document.getElementById('llm-output-text');
-            
-            button.disabled = true;
-            outputBox.classList.add('hidden');
-            buttonText.textContent = 'Generating Draft...';
+      <!-- FEATURED PROJECT -->
+      <div class="project-card featured">
+        <div class="project-tag">⚡ Featured — Live in Production</div>
+        <div class="project-name">rajcv-infra</div>
+        <div class="project-metrics">
+          <div class="metric"><span class="metric-val">12+</span><span class="metric-label">Services</span></div>
+          <div class="metric"><span class="metric-val">100%</span><span class="metric-label">Self-Hosted</span></div>
+          <div class="metric"><span class="metric-val">Zero</span><span class="metric-label">Open Ports</span></div>
+        </div>
+        <div class="project-desc">
+          A full-stack self-hosted infrastructure running on a single Ubuntu VPS with Docker Compose orchestration.
+          Implements zero-trust ingress via Cloudflare Tunnel (no exposed ports), a complete observability stack
+          (Prometheus + Grafana + Loki + Promtail), event-driven service request system with Apache Kafka,
+          PostgreSQL persistence, and an async email consumer pipeline. Designed to mirror real SRE production
+          environments — monitoring, alerting, log aggregation, and async event processing all wired together.
+        </div>
+        <div class="project-stack">
+          <span class="stack-tag">Docker Compose</span>
+          <span class="stack-tag">Apache Kafka</span>
+          <span class="stack-tag">PostgreSQL</span>
+          <span class="stack-tag">Nginx</span>
+          <span class="stack-tag">Prometheus</span>
+          <span class="stack-tag">Grafana</span>
+          <span class="stack-tag">Loki</span>
+          <span class="stack-tag">Promtail</span>
+          <span class="stack-tag">Node.js</span>
+          <span class="stack-tag">Cloudflare Zero Trust</span>
+          <span class="stack-tag">KafkaJS</span>
+          <span class="stack-tag">Node Exporter</span>
+        </div>
+        <div style="margin-top:1.25rem;display:flex;gap:1rem;flex-wrap:wrap">
+          <a href="https://rajcv.online" target="_blank" class="project-link">→ Live Site</a>
+          <a href="https://github.com/Rajeshvpm/rajcv-infra" target="_blank" class="project-link">→ GitHub</a>
+          <a href="https://grafana.rajcv.online" target="_blank" class="project-link">→ Grafana Dashboard</a>
+        </div>
+      </div>
 
-            const resumeSummary = resumeData.profile;
-            const experienceDetails = resumeData.experience.map(job => 
-                `**${job.title}** at ${job.company} (${job.dates}): ${job.details.join('; ')}`
-            ).join('\n---\n');
+      <!-- KAFKA EVENT PIPELINE -->
+      <div class="project-card">
+        <div class="project-tag">🔁 Event-Driven Architecture</div>
+        <div class="project-name">Kafka Service Request Pipeline</div>
+        <div class="project-desc">
+          Async event-driven ticket system built on Apache Kafka. Service requests publish to
+          <code style="font-family:var(--mono);font-size:11px;color:var(--accent)">service.request.created</code> topic.
+          A dedicated email consumer worker reads events and sends acknowledgement + resolution emails.
+          Full ticket lifecycle tracked in PostgreSQL with a custom dashboard UI.
+        </div>
+        <div class="project-stack">
+          <span class="stack-tag">Kafka KRaft</span>
+          <span class="stack-tag">KafkaJS</span>
+          <span class="stack-tag">Consumer Groups</span>
+          <span class="stack-tag">PostgreSQL</span>
+          <span class="stack-tag">Nodemailer</span>
+          <span class="stack-tag">Node.js</span>
+        </div>
+      </div>
 
-            const systemPrompt = `You are a world-class professional resume and cover letter writer. Your goal is to write a single, compelling, introductory paragraph (maximum 100 words) for a cover letter, based on the provided resume data. Highlight the candidate's core strengths (Cloud Operations, automation, reliability, and incident reduction). Do not include salutations or closing remarks.`;
-            
-            const userQuery = `Draft a concise cover letter introductory paragraph using the following resume content:\n\nPROFILE: "${resumeSummary}"\n\nEXPERIENCE:\n${experienceDetails}`;
+      <!-- OBSERVABILITY STACK -->
+      <div class="project-card">
+        <div class="project-tag">📊 Observability</div>
+        <div class="project-name">Full Observability Stack</div>
+        <div class="project-desc">
+          End-to-end observability — metrics, logs, and dashboards — provisioned as code.
+          Prometheus scrapes node-exporter and nginx-exporter every 15s. Promtail ships Docker
+          logs to Loki. Grafana dashboards provisioned via JSON for CPU, RAM, disk, nginx
+          connections, and log explorer panels. Survives container restarts.
+        </div>
+        <div class="project-stack">
+          <span class="stack-tag">Prometheus</span>
+          <span class="stack-tag">Grafana</span>
+          <span class="stack-tag">Loki</span>
+          <span class="stack-tag">Promtail</span>
+          <span class="stack-tag">Node Exporter</span>
+          <span class="stack-tag">Nginx Exporter</span>
+        </div>
+      </div>
 
-            const payload = {
-                contents: [{ parts: [{ text: userQuery }] }],
-                systemInstruction: {
-                    parts: [{ text: systemPrompt }]
-                },
-                // Do not use tools/grounding for this internal summarization task
-            };
+    </div>
+  </section>
 
-            const options = {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            };
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-tag">Technical Stack</div>
+    <h2 class="section-title">Skills &amp; <span>Technologies</span></h2>
+    <div class="skills-grid">
+      <div class="skill-group">
+        <div class="skill-group-name">Distributed Systems</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Apache Kafka</span>
+          <span class="skill-tag">Hadoop</span>
+          <span class="skill-tag">Elasticsearch</span>
+          <span class="skill-tag">Redis Cluster</span>
+          <span class="skill-tag">MongoDB Cluster</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-name">Monitoring & Observability</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Grafana</span>
+          <span class="skill-tag">Prometheus</span>
+          <span class="skill-tag">Loki</span>
+          <span class="skill-tag">DataDog</span>
+          <span class="skill-tag">Opsgenie</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-name">Networking</div>
+        <div class="skill-tags">
+          <span class="skill-tag">TCP/IP</span>
+          <span class="skill-tag">DNS / DHCP</span>
+          <span class="skill-tag">BGP / ExaBGP</span>
+          <span class="skill-tag">ECMP</span>
+          <span class="skill-tag">NGINX L7 LB</span>
+          <span class="skill-tag">Keepalived</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-name">Infrastructure & Automation</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Docker</span>
+          <span class="skill-tag">Docker Compose</span>
+          <span class="skill-tag">Puppet</span>
+          <span class="skill-tag">Ansible</span>
+          <span class="skill-tag">Bash</span>
+          <span class="skill-tag">Python</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-name">Operating Systems & DBs</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Linux (Debian/RHEL)</span>
+          <span class="skill-tag">MySQL</span>
+          <span class="skill-tag">PostgreSQL</span>
+          <span class="skill-tag">Redis</span>
+        </div>
+      </div>
+      <div class="skill-group">
+        <div class="skill-group-name">Security & CI/CD</div>
+        <div class="skill-tags">
+          <span class="skill-tag">Wazuh</span>
+          <span class="skill-tag">FortiClient VPN</span>
+          <span class="skill-tag">Git</span>
+          <span class="skill-tag">CI/CD Pipelines</span>
+          <span class="skill-tag">ServiceNow</span>
+        </div>
+      </div>
+    </div>
+  </section>
 
-            try {
-                const response = await fetchWithRetry(API_URL, options);
-                const result = await response.json();
-                
-                const generatedText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (generatedText) {
-                    outputText.textContent = generatedText;
-                    outputBox.classList.remove('hidden');
-                } else {
-                    outputText.textContent = "Could not generate a cover letter draft. The LLM response was empty or malformed.";
-                    outputBox.classList.remove('hidden');
-                    console.error("LLM Generation Error:", result);
-                }
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="section-tag">Let's Connect</div>
+    <h2 class="section-title">Get In <span>Touch</span></h2>
+    <div class="contact-grid">
+      <div class="contact-info">
+        <a href="mailto:rajesh.p.message@gmail.com" class="contact-row">
+          <span class="contact-icon">✉</span>
+          <div>
+            <span class="contact-label">Email</span>
+            <span class="contact-val">rajesh.p.message@gmail.com</span>
+          </div>
+        </a>
+        <a href="tel:9789338733" class="contact-row">
+          <span class="contact-icon">☎</span>
+          <div>
+            <span class="contact-label">Phone</span>
+            <span class="contact-val">9789338733</span>
+          </div>
+        </a>
+        <a href="https://www.linkedin.com/in/contact-rajesh" target="_blank" class="contact-row">
+          <span class="contact-icon">in</span>
+          <div>
+            <span class="contact-label">LinkedIn</span>
+            <span class="contact-val">linkedin.com/in/contact-rajesh</span>
+          </div>
+        </a>
+        <a href="https://github.com/rajesh-post" target="_blank" class="contact-row">
+          <span class="contact-icon">⌥</span>
+          <div>
+            <span class="contact-label">GitHub</span>
+            <span class="contact-val">github.com/rajesh-post</span>
+          </div>
+        </a>
+        <a href="https://github.com/Rajeshvpm/rajcv-infra" target="_blank" class="contact-row">
+          <span class="contact-icon">◈</span>
+          <div>
+            <span class="contact-label">Infrastructure Repo</span>
+            <span class="contact-val">github.com/Rajeshvpm/rajcv-infra</span>
+          </div>
+        </a>
+      </div>
+      <div class="services-cta">
+        <h3>Need a Service?</h3>
+        <p>I offer technical services through this site — infrastructure setup, automation, monitoring, and more. Raise a request and I'll get back to you.</p>
+        <a href="/services/" class="btn btn-primary">Book a Service →</a>
+      </div>
+    </div>
+  </section>
 
-            } catch (error) {
-                outputText.textContent = `Error: Failed to connect to the drafting service. Please check the console for details. (${error.message})`;
-                outputBox.classList.remove('hidden');
-                console.error("API Call Error:", error);
-            } finally {
-                buttonText.textContent = '✨ Generate Draft Cover Letter Summary ✨';
-                button.disabled = false;
-            }
-        }
+</div><!-- end .page -->
 
-        // --- Resume Data (Unchanged) ---
-        const resumeData = {
-            personal: {
-                name: "Rajesh P",
-                title: "Cloud Operations Engineer",
-                contact: "rajesh.p.message@gmail.com | 9789338733 | <a href='https://www.linkedin.com/in/your-profile' target='_blank'>Linkedin</a> | <a href='https://github.com/rajesh-post' target='_blank'>https://github.com/rajesh-post</a>",
-            },
-            profile: "Highly skilled Cloud Operations Engineer focused on maintaining 99.9% system availability in production environments. Proficient in automating infrastructure with Python, Bash, Puppet, and Ansible. Expertise in performance optimization and incident reduction using monitoring tools like Grafana and Datadog. Strong focus on reducing Mean Time To Resolution (MTTR), eliminating manual toil, and driving system reliability through proactive monitoring and automation.",
-            experience: [
-                {
-                    title: "Cloud Ops Engineer",
-                    company: "ZOHO",
-                    dates: "Since Jan 2025",
-                    details: [
-                        "Designed and managed NGINX L7 load balancing with L3 Keepalived failover, ensuring seamless traffic routing and high availability during peak loads.",
-                        "Maintained 99.99% uptime across multi–data center environments using Grafana, Elasticsearch, and proprietary monitoring tools; reduced incident response times by 20%.",
-                        "Managed Java applications on Apache Tomcat servers, handling JVM tuning and SSL certificate management for enterprise web hosting.",
-                        "Optimized application response times and reduced database load by expertly managing Redis cluster servers for CDN and proxy caching.",
-                        "Used Puppet for configuration management, ensuring infrastructure consistency across production and test servers, significantly reducing manual configuration errors.",
-                        "Maintained MySQL and MongoDB databases, including replication monitoring, performance tuning, and backup management across clustered environments.",
-                        "Deployed FortiClient VPN with MFA and Wazuh security agents across all production servers, enhancing threat detection and ensuring compliance.",
-                        "Participated in on-call rotations, providing 24/7 support for critical systems and ensuring prompt resolution of incidents, often achieving a low MTTR."
-                    ]
-                },
-                {
-                    title: "Asst. Systems Engineer",
-                    company: "TCS",
-                    dates: "Dec 2021 – Jan 2025, Chennai",
-                    details: [
-                        "Managed Linux systems, focusing on system setup, performance tuning, and server hardening for critical servers.",
-                        "Contributed to patching automation by troubleshooting and modifying existing Ansible scripts, improving patching success rates by an estimated 20%.",
-                        "Strengthened system security by implementing best practices and applying critical patches.",
-                        "Contributed to achieving 99.9% uptime by continuously monitoring and optimizing Linux system performance with tools such as vSphere and DataDog.",
-                        "Used Git for code management and fostering team collaboration, integrated with CI/CD pipelines."
-                    ]
-                },
-                {
-                    title: "Product Consultant",
-                    company: "Linz Technologies",
-                    dates: "April 2021 – December 2021",
-                    details: [
-                        "Spearheaded the implementation and support of Zoho CRM and Zoho Desk, ensuring seamless integration.",
-                        "Collaborated directly with stakeholders to identify and gather business requirements.",
-                        "Customized and configured Zoho applications based on detailed requirements.",
-                        "Partnered with cross-functional teams for successful deployment of Zoho products, providing crucial support."
-                    ]
-                }
-            ],
-            skills: {
-                "Operating Systems": ["Debian", "Red Hat", "Linux"],
-                "Databases": ["MySQL", "MongoDB", "Redis"],
-                "Scripting Languages": ["Bash", "Python"],
-                "Web Servers": ["NGINX", "Apache Tomcat"],
-                "Configuration Management": ["Puppet", "Ansible"],
-                "Monitoring Tools": ["Grafana", "Opsgenie", "DataDog"],
-                "Security & Networking": ["Firewalls", "SELinux", "IDS/IPS", "Wazuh", "FortiClient VPN with MFA"],
-                "Containerization & CI/CD": ["Docker", "Git", "CI/CD Pipelines"],
-                "Other Tools": ["Apache Kafka", "OpenVPN", "Service Now"]
-            },
-            education: [
-                {
-                    institution: "Hindustan University",
-                    degree: "B.Tech",
-                    field: "Aeronautical"
-                }
-            ],
-            certifications: [
-                "Certified Linux Admin (E2) - Demonstrates proficiency in Linux system administration.",
-                "Process Improvement Recognition - Appreciated for overhauling system documentation processes, significantly enhancing clarity."
-            ]
-        };
-        
-        // --- Event Listeners and Initialization ---
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <strong>Rajesh P</strong> — Site Reliability Engineer<br/>
+      <span>Chennai, India · rajcv.online</span>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/Rajeshvpm/rajcv-infra" target="_blank">rajcv-infra</a>
+      <a href="https://grafana.rajcv.online" target="_blank">Grafana</a>
+      <a href="/tickets.html">Tickets</a>
+      <a href="/kafka/">Kafka UI</a>
+      <a href="/services/">Services</a>
+    </div>
+  </div>
+</footer>
 
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            
-            // INJECT PROFILE SUMMARY
-            document.getElementById('profile-summary').textContent = resumeData.profile;
+<script>
+function toggleExp(header) {
+  const item = header.closest('.exp-item');
+  const body = item.querySelector('.exp-body');
+  body.classList.toggle('open');
+}
 
-            // Wire LLM button
-            document.getElementById('generate-draft-btn').addEventListener('click', generateCoverLetterDraft);
+// Intersection Observer for scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.style.opacity = '1';
+      entry.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
 
-            // Wire Navigation buttons to Chatbot
-            document.getElementById('nav-resume').addEventListener('click', () => {
-                chatbotEl.style.display = 'flex';
-                simulateUserQuery('summarize my experience'); 
-            });
-            
-             document.getElementById('nav-skills').addEventListener('click', () => {
-                chatbotEl.style.display = 'flex';
-                simulateUserQuery('list all technical skills'); 
-            });
-
-             document.getElementById('nav-contact').addEventListener('click', () => {
-                chatbotEl.style.display = 'flex';
-                simulateUserQuery('contact details'); 
-            });
-
-            // --- Photo Upload Logic ---
-            const profileContainer = document.getElementById('profile-image-container');
-            const profileInput = document.getElementById('profile-upload-input');
-            const profileImage = document.getElementById('profile-image');
-
-            // 1. Click the container to trigger the hidden file input
-            profileContainer.addEventListener('click', () => {
-                profileInput.click();
-            });
-
-            // 2. Read the selected file and set the image source
-            profileInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        // Set the image source to the Base64 data URL
-                        profileImage.src = e.target.result;
-                        profileImage.alt = "Rajesh P Profile Photo";
-                    };
-                    // Read the image file as a Data URL (Base64)
-                    reader.readAsDataURL(file);
-                }
-            });
-            // --- End Photo Upload Logic ---
-        });
-
-
-        // --- Chatbot Logic ---
-
-        const chatbotEl = document.getElementById('chatbot');
-        const toggleChatBtn = document.getElementById('toggle-chat');
-        const closeChatBtn = document.getElementById('close-chat');
-        const chatMessagesEl = document.getElementById('chat-messages');
-        const userInputEl = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        let isSending = false;
-
-        function simulateUserQuery(query) {
-             appendMessage('user', query);
-             const loadingIndicator = createLoadingMessage();
-
-            setTimeout(async () => {
-                try {
-                    const botResponse = await getResumeDataResponse(query); 
-                    chatMessagesEl.removeChild(loadingIndicator);
-                    appendMessage('bot', botResponse);
-                } catch (error) {
-                    console.error("Local function error:", error);
-                    chatMessagesEl.removeChild(loadingIndicator);
-                    appendMessage('bot', "An unexpected error occurred while processing the resume data.");
-                } finally {
-                    isSending = false;
-                    sendBtn.disabled = userInputEl.value.trim() === ''; 
-                }
-            }, 100); 
-        }
-
-        toggleChatBtn.addEventListener('click', () => {
-            chatbotEl.style.display = chatbotEl.style.display === 'flex' ? 'none' : 'flex';
-            if (chatbotEl.style.display === 'flex') {
-                userInputEl.focus();
-                scrollToBottom();
-            }
-        });
-        closeChatBtn.addEventListener('click', () => {
-            chatbotEl.style.display = 'none';
-        });
-
-        userInputEl.addEventListener('input', () => {
-            sendBtn.disabled = userInputEl.value.trim() === '' || isSending;
-        });
-
-        sendBtn.addEventListener('click', sendMessage);
-        userInputEl.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !sendBtn.disabled) {
-                sendMessage();
-            }
-        });
-
-        function scrollToBottom() {
-            chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
-        }
-
-        function appendMessage(sender, text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.classList.add(sender === 'user' ? 'chat-message-user' : 'chat-message-bot');
-            messageDiv.innerHTML = sender === 'bot' ? text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>') : text;
-            chatMessagesEl.appendChild(messageDiv);
-            scrollToBottom();
-        }
-
-        function createLoadingMessage() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.id = 'loading-indicator';
-            loadingDiv.classList.add('chat-message-bot', 'flex', 'space-x-1', 'items-center');
-            loadingDiv.innerHTML = `<span class="text-sm">Typing...</span>`;
-            chatMessagesEl.appendChild(loadingDiv);
-            scrollToBottom();
-            return loadingDiv;
-        }
-
-        async function sendMessage() {
-            const userText = userInputEl.value.trim();
-            if (userText === '') return;
-
-            appendMessage('user', userText);
-            userInputEl.value = '';
-            sendBtn.disabled = true;
-            isSending = true;
-
-            const loadingIndicator = createLoadingMessage();
-
-            try {
-                const botResponse = await getResumeDataResponse(userText); 
-                chatMessagesEl.removeChild(loadingIndicator);
-                appendMessage('bot', botResponse);
-            } catch (error) {
-                console.error("Local function error:", error);
-                chatMessagesEl.removeChild(loadingIndicator);
-                appendMessage('bot', "An unexpected error occurred while processing the resume data.");
-            } finally {
-                isSending = false;
-                sendBtn.disabled = userInputEl.value.trim() === ''; 
-            }
-        }
-
-        // --- Local Data Response ---
-        async function getResumeDataResponse(userQuery) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-
-            const query = userQuery.toLowerCase();
-            let responseText = '';
-
-            if (query.includes('skill') || query.includes('technology') || query.includes('tool')) {
-                responseText = "Rajesh's core skills are categorized as follows:\n\n";
-                for (const category in resumeData.skills) {
-                    responseText += `**${category}:** ${resumeData.skills[category].join(', ')}\n`;
-                }
-            } else if (query.includes('experience') || query.includes('job') || query.includes('work') || query.includes('company')) {
-                const latestJob = resumeData.experience[0];
-                responseText = `Rajesh is currently a **${latestJob.title}** at **${latestJob.company}** (since ${latestJob.dates.replace('Since ', '')}).\n\n`;
-                
-                const otherJobs = resumeData.experience.slice(1).map(job => `${job.title} at ${job.company} (${job.dates})`).join('\n- ');
-                if (otherJobs) {
-                    responseText += "Previous roles include:\n- " + otherJobs;
-                }
-            } else if (query.includes('summary') || query.includes('profile') || query.includes('focus')) {
-                responseText = `Here is Rajesh's professional profile summary:\n\n"${resumeData.profile}"`;
-            } else if (query.includes('education') || query.includes('degree') || query.includes('certification') || query.includes('award')) {
-                const edu = resumeData.education[0];
-                const certs = resumeData.certifications.join('\n- ');
-                
-                responseText = `Rajesh holds a **${edu.degree}** in **${edu.field}** from ${edu.institution}.\n\n`;
-                responseText += "Key Certifications and Awards include:\n- " + certs;
-
-            } else if (query.includes('contact') || query.includes('email') || query.includes('phone') || query.includes('linkedin')) {
-                responseText = `You can contact Rajesh via: ${resumeData.personal.contact.replace(/<a.*?>(.*?)<\/a>/g, '$1')}. The email is **rajesh.p.message@gmail.com**.`;
-            } else {
-                responseText = "I can only retrieve information directly from the resume data. Please try asking about **skills**, **experience**, **education**, or the **profile summary** of Rajesh P.";
-            }
-
-            return responseText;
-        }
-
-    </script>
+document.querySelectorAll('.project-card, .skill-group, .stat-item').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(16px)';
+  el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+  observer.observe(el);
+});
+</script>
 </body>
 </html>

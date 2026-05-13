@@ -1,0 +1,27 @@
+Date: 2026-05-13 12:57:09.834637782 +0530 IST m=+1229.379075871
+Recipient: {Rajesh (Admin) rajesh.cs225@gmail.com}
+Subject: Second Factor Method Added
+Second Factor Method Added
+
+Hi Rajesh (Admin),
+
+This notification has been sent to you in order to notify you that a Second Factor Method was added to your account.
+
+----------------------------------------
+
+Event Details:
+
+Action: Second Factor Method Added
+
+
+
+Category: One-Time Password
+
+
+
+----------------------------------------
+
+This notification was intended for Rajesh (Admin). This event notification was generated due to an action from 49.206.8.57. If you do not believe that your actions could have triggered this event or if you are concerned about your account's safety, please change your password and reach out to an administrator.
+
+Powered by Authelia https://www.authelia.com
+

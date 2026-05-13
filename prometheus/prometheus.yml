@@ -23,3 +23,7 @@ scrape_configs:
   - job_name: 'mtail'
     static_configs:
       - targets: ['mtail:3903']
+
+  - job_name: 'promtail'
+    static_configs:
+      - targets: ['localhost:9080'] # Or your Promtail container name/IP

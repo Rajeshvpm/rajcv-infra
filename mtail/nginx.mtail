@@ -4,4 +4,6 @@ histogram nginx_http_request_duration_seconds buckets 0.005, 0.01, 0.025, 0.05, 
 # This version targets the exact pattern in your log line
 /\"request_time\":\"(?P<request_time>[0-9.]+)\"/ {
   nginx_http_request_duration_seconds = $request_time
+  nginx_upstream_response_duration_seconds = $upstream_duration
+}
 }
