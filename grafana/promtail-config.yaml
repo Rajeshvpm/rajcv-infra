@@ -9,6 +9,58 @@ clients:
   - url: http://loki:3100/loki/api/v1/push
 
 scrape_configs:
+
+  - job_name: authelia
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: name
+            values: ['authelia']   # matches container_name: authelia in your compose
+    relabel_configs:
+      # strip the leading slash from container name /authelia → authelia
+      - source_labels: [__meta_docker_container_name]
+        regex: '/(.*)'
+        target_label: container
+      - target_label: job
+        replacement: authelia
+      - target_label: app
+        replacement: authelia
+      # bring compose service name as a label
+      - source_labels: [__meta_docker_container_label_com_docker_compose_service]
+        target_label: compose_service
+    pipeline_stages:
+      # Docker wraps logs: {"log":"<actual json>\n","stream":"stdout","time":"..."}
+      # Stage 1: unwrap the Docker envelope
+      - json:
+          expressions:
+            output: log
+            stream: stream
+
+      # Stage 2: parse Authelia's own JSON from the unwrapped log line
+      - json:
+          expressions:
+            level: level
+            msg: msg
+            username: username
+            remote_ip: remote_ip
+            method: method
+            path: path
+            status_code: status_code
+            latency: latency
+            rule_domain: rule_domain
+            auth_type: auth_type
+          source: output
+
+      # Stage 3: promote stable low-cardinality fields to Loki labels
+      # WARNING: never label username or remote_ip — infinite cardinality
+      - labels:
+          level:
+          stream:
+
+      # Stage 4: replace the line with the clean inner Authelia log, not the Docker wrapper
+      - output:
+          source: output
   - job_name: docker
     static_configs:
       - targets:

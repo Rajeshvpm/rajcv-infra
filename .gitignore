@@ -1,7 +1,22 @@
-.env
-data/
-.DS_Store
-.vscode/
-*.swp
-__pycache__/
-*.pyc
+# Mail data
+mailu/mail/
+mailu/mailqueue/
+mailu/dkim/
+mailu/certs/
+mailu/data/
+
+# Sensitive env files
+mailu/mailu.env
+
+# Backup/temp nginx configs
+nginx/nginx.confF%
+nginx/*.conf_*
+nginx/html/services/index.html_*
+
+# Misc
+127.0.0.11:53:
+observer.sh
+
+# DB and runtime
+authelia/db.sqlite3
+authelia/notification.txt

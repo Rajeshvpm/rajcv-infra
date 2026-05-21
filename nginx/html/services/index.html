@@ -76,13 +76,47 @@
         </div>
 
         <div id="help" class="tab-content">
-            <form onsubmit="handleSubmit(event, 'help')">
-                <label>What favour can I do for you?</label>
-                <textarea id="desc2" rows="6" placeholder="Favours should be repaid with favours - ask for them with caution.  " required></textarea>
-                <button type="submit" class="btn-submit">Send Message</button>
-            </form>
+
+          <!-- credit bar — hidden until registered -->
+          <div id="credit-bar" style="display:none; background:#f0f0f0;
+               padding:12px; border-radius:8px; margin-bottom:20px;
+               display:flex; justify-content:space-between;">
+            <span>👤 <strong id="display-name"></strong></span>
+            <span>💳 Credits: <strong id="display-credits">--</strong></span>
+          </div>
+
+          <!-- register section -->
+          <div id="register-section">
+            <label>Your Name</label>
+            <input type="text" id="reg-name" placeholder="Enter your name to continue">
+            <button class="btn-submit" style="margin-top:10px"
+                    onclick="registerUser()">Register / Check In</button>
+          </div>
+
+          <!-- favour form — shown after registration -->
+          <form id="favour-form" style="display:none"
+                onsubmit="handleFavourSubmit(event)">
+            <label>Raise this request for</label>
+            <select id="raised-for" required>
+              <option value="">-- Select a person --</option>
+            </select>
+
+            <label>What favour do you need?</label>
+            <textarea id="desc2" rows="5"
+              placeholder="Favours should be repaid with favours — ask with caution."
+              required></textarea>
+
+            <p id="credit-warning"
+               style="color:red; display:none; margin-top:10px;">
+              ⚠️ You need at least 5 credits. Serve a favour first to earn credits.
+            </p>
+
+            <button type="submit" class="btn-submit">
+              Send Favour Request (costs 5 credits)
+            </button>
+          </form>
         </div>
-    </div>
+        
 
 
     <script>
@@ -100,7 +134,7 @@
     async function handleSubmit(e, type) {
         e.preventDefault();
 
-        
+
 	// Capture common fields
 	const nameValue = document.getElementById('name1')?.value || document.getElementById('name2')?.value || "Guest User";
         const costValue = document.getElementById('cost1')?.value || "As agreed";
@@ -138,7 +172,98 @@
             console.error("Network Error:", error);
             alert("Network error. Please check if the backend service is running.");
         }
+
     }
-    </script>   
+     // ── CREDIT SYSTEM ─────────────────────────────────────
+    let currentUser = null;
+
+    async function registerUser() {
+      const name = document.getElementById('reg-name').value.trim();
+      if (!name) return alert('Please enter your name');
+
+      const res = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+
+      if (!res.ok) return alert('Registration failed');
+
+      currentUser = await res.json();   // { id, name, credits }
+
+      // show credit bar
+      document.getElementById('display-name').textContent = currentUser.name;
+      document.getElementById('display-credits').textContent = currentUser.credits;
+      document.getElementById('credit-bar').style.display = 'flex';
+
+      // swap register → form
+      document.getElementById('register-section').style.display = 'none';
+      document.getElementById('favour-form').style.display = 'block';
+
+      if (currentUser.credits < 5) {
+        document.getElementById('credit-warning').style.display = 'block';
+      }
+
+      await loadUsers();
+    }
+
+    async function loadUsers() {
+      const res = await fetch('/api/users');
+      const users = await res.json();
+      const select = document.getElementById('raised-for');
+      select.innerHTML = '<option value="">-- Select a person --</option>';
+      users.forEach(u => {
+        if (u.name !== currentUser.name) {
+          const opt = document.createElement('option');
+          opt.value = u.name;
+          opt.textContent = `${u.name} (${u.credits} credits)`;
+          select.appendChild(opt);
+        }
+      });
+    }
+
+    async function handleFavourSubmit(e) {
+      e.preventDefault();
+
+      if (!currentUser || currentUser.credits < 5) {
+        alert('Not enough credits. Serve a favour first.');
+        return;
+      }
+
+      const raisedFor = document.getElementById('raised-for').value;
+      const description = document.getElementById('desc2').value;
+      if (!raisedFor) return alert('Please select who this request is for');
+
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: currentUser.name,
+          description,
+          raisedFor
+          // no task field = favour type in your backend
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.status === 403) {
+        if (data.error === 'INSUFFICIENT_CREDITS')
+          alert('Not enough credits. Serve a favour first.');
+        else if (data.error === 'NOT_REGISTERED')
+          alert('You are not registered.');
+        return;
+      }
+
+      if (res.ok) {
+        currentUser.credits -= 5;
+        document.getElementById('display-credits').textContent = currentUser.credits;
+        if (currentUser.credits < 5)
+          document.getElementById('credit-warning').style.display = 'block';
+        alert(`✅ Favour request sent! Ticket #${data.ticketId}. Credits left: ${currentUser.credits}`);
+        document.getElementById('desc2').value = '';
+      }
+    }
+    </script>
 </body>
 </html>

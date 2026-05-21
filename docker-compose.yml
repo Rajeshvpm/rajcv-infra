@@ -1,4 +1,5 @@
 services:
+  # ── NGINX EDGE PROXY ──────────────────────────────────────
   nginx:
     build:
       context: ./nginx
@@ -7,13 +8,17 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/html:/usr/share/nginx/html:ro
-      - nginx-logs:/var/log/nginx  # Added this to allow mtail to read logs
+      - ./nginx/mailu_headers.conf:/etc/nginx/mailu_headers.conf:ro
+      - nginx-logs:/var/log/nginx
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     networks:
       - internal
 
+  # ── BACKEND CORE APP ──────────────────────────────────────
   backend-app:
     image: node:18-alpine
     container_name: rajcv-backend
@@ -29,6 +34,8 @@ services:
     command: sh -c "npm install express nodemailer pg kafkajs && node server.js"
     networks:
       - internal
+
+  # ── EMAIL WORKER CONSUMER ─────────────────────────────────
   email-consumer:
     image: node:18-alpine
     container_name: rajcv-email-consumer
@@ -42,13 +49,15 @@ services:
       - POSTGRES_USER=rajcv
       - POSTGRES_PASSWORD=admin1
       - GMAIL_USER=rajesh.cs225@gmail.com
-      - GMAIL_PASS=yhom vnwc hzvv ukkf
+      - GMAIL_PASS=GMAIL_PASSWD
       - KAFKAJS_NO_PARTITIONER_WARNING=1
     networks:
       - internal
     depends_on:
       - rajcv-kafka
       - rajcv-postgres
+
+  # ── GOOGLE MTAIL LOG EXPORTER ──────────────────────────────
   mtail:
     image: ghcr.io/google/mtail:latest
     container_name: rajcv-mtail
@@ -62,6 +71,7 @@ services:
     ports:
       - "3903:3903"
 
+  # ── GRAFANA ANALYTICS ─────────────────────────────────────
   grafana:
     image: grafana/grafana:latest
     container_name: rajcv-grafana
@@ -75,7 +85,7 @@ services:
       - GF_SERVER_SERVE_FROM_SUB_PATH=false
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org. # Make sure this matches your Org name
+      - GF_AUTH_ANONYMOUS_ORG_NAME=Main Org.
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer
       - GF_SECURITY_DISABLE_GRAVATAR=true
       - GF_FEATURE_TOGGLES_ENABLE=kubernetesClientDashboardsFolders=false
@@ -88,6 +98,7 @@ services:
       - loki
       - prometheus
 
+  # ── GRAFANA LOKI LOG ENGINE ───────────────────────────────
   loki:
     image: grafana/loki:latest
     container_name: rajcv-loki
@@ -99,6 +110,7 @@ services:
     networks:
       - internal
 
+  # ── GRAFANA PROMTAIL AGENT ────────────────────────────────
   promtail:
     image: grafana/promtail:latest
     container_name: rajcv-promtail
@@ -108,6 +120,7 @@ services:
       - ./grafana/promtail-config.yaml:/etc/promtail/config.yaml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes/rajcv-infra_nginx-logs/_data:/var/log/nginx:ro
       - ./geoip/GeoLite2-City.mmdb:/etc/promtail/GeoLite2-City.mmdb:ro
     networks:
@@ -115,6 +128,7 @@ services:
     depends_on:
       - loki
 
+  # ── PROMETHEUS METRICS METERS ─────────────────────────────
   prometheus:
     image: prom/prometheus:latest
     container_name: rajcv-prometheus
@@ -128,6 +142,7 @@ services:
     networks:
       - internal
 
+  # ── PROMETHEUS NODE EXPORTER ──────────────────────────────
   node-exporter:
     image: prom/node-exporter:latest
     container_name: rajcv-node-exporter
@@ -144,40 +159,40 @@ services:
     networks:
       - internal
 
-
+  # ── POSTGRESQL DATA STORE ─────────────────────────────────
   rajcv-postgres:
     image: postgres:16-alpine
     container_name: rajcv-postgres
-    networks:
-      - internal
+    restart: unless-stopped
     environment:
       POSTGRES_DB: rajcv_services
       POSTGRES_USER: rajcv
       POSTGRES_PASSWORD: admin1
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
+    networks:
+      - internal
 
+  # ── KAFKA WEB DASHBOARD UI ────────────────────────────────
   rajcv-kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: rajcv-kafka-ui
-    networks:
-      internal:
+    restart: unless-stopped
     environment:
       KAFKA_CLUSTERS_0_NAME: rajcv
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
       SERVER_SERVLET_CONTEXT_PATH: /kafka
     depends_on:
       - rajcv-kafka
-    restart: unless-stopped
+    networks:
+      - internal
+
+  # ── KAFKA EVENT STREAM ────────────────────────────────────
   rajcv-kafka:
     image: apache/kafka:3.7.0
     container_name: rajcv-kafka
     hostname: kafka
-    networks:
-      internal:
-        aliases:
-          - kafka
+    restart: unless-stopped
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
@@ -192,53 +207,191 @@ services:
       CLUSTER_ID: "rajcv-kafka-cluster-001"
     volumes:
       - kafka_data:/var/lib/kafka/data
-    restart: unless-stopped
+    networks:
+      internal:
+        aliases:
+          - kafka
 
-
-  # Add these two new services to your existing file
+  # ── AUTHELIA IDENTITY GATEWAY ─────────────────────────────
   authelia:
     image: authelia/authelia:latest
     container_name: authelia
     restart: unless-stopped
     volumes:
       - ./authelia:/config
-    networks:
-      - internal  # Same network as your other containers
     environment:
       - TZ=Asia/Kolkata
+    networks:
+      - internal
 
+  # ── AUTHELIA REDIS CACHE ──────────────────────────────────
   authelia_redis:
     image: redis:alpine
     container_name: authelia_redis
     restart: unless-stopped
     networks:
       - internal
+
+  # ── SECURITY SOCKET PROXY ─────────────────────────────────
+  socket-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: rajcv-socket-proxy
+    restart: unless-stopped
+    environment:
+      CONTAINERS: 1
+      POST: 0
+      DELETE: 0
+      EXEC: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - internal
+
+  # ── CLOUDFLARE TUNNEL DAEMON ──────────────────────────────
   cloudflared:
     image: cloudflare/cloudflared:latest
     container_name: rajcv-cloudflared
     restart: unless-stopped
     dns:
       - 1.1.1.1
-      - 1.0.0.1  
+      - 1.0.0.1
     environment:
       - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?CLOUDFLARE_TUNNEL_TOKEN not set}
-    command: tunnel --no-autoupdate --protocol http2 run
+    command: >
+      tunnel --no-autoupdate
+      --protocol http2
+      --retries 5
+      --grace-period 15s
+      run
+    healthcheck:
+      test: ["CMD", "cloudflared", "tunnel", "info"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
     networks:
-      - internal  
-    depends_on:
-      - nginx
-      - grafana
+      - internal
 
-# --- Top Level Definitions (No Indentation) ---
+  # ── MAILU FRONT EDGE ──────────────────────────────────────
+  mailu-front:
+    image: ghcr.io/mailu/nginx:2024.06.51
+    container_name: rajcv-mailu-front
+    restart: always
+    env_file: ./mailu/mailu.env
+    ports:
+      - "25:25"
+      - "465:465"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - ./mailu/certs:/certs:ro
+      - /etc/letsencrypt/live/mail.rajcv.online/fullchain.pem:/certs/cert.pem:ro
+      - /etc/letsencrypt/live/mail.rajcv.online/privkey.pem:/certs/key.pem:ro
+    depends_on:
+      - mailu-admin
+      - mailu-smtp
+      - mailu-imap
+      - mailu-webmail
+      - mailu-antispam
+    networks:
+      internal:
+        aliases:
+          - front
+
+  # ── MAILU ADMIN INTERFACE ─────────────────────────────────
+  mailu-admin:
+    image: ghcr.io/mailu/admin:2024.06.51
+    container_name: rajcv-mailu-admin
+    restart: always
+    env_file: ./mailu/mailu.env
+    volumes:
+      - ./mailu/data:/data
+      - ./mailu/dkim:/dkim
+    depends_on:
+      - mailu-redis
+    networks:
+      internal:
+        aliases:
+          - admin
+
+  # ── MAILU SMTP ENDPOINT ───────────────────────────────────
+  mailu-smtp:
+    image: ghcr.io/mailu/postfix:2024.06.51
+    container_name: rajcv-mailu-smtp
+    restart: always
+    env_file: ./mailu/mailu.env
+    volumes:
+      - ./mailu/mailqueue:/queue
+    depends_on:
+      - mailu-antispam
+    networks:
+      internal:
+        aliases:
+          - smtp
+
+  # ── MAILU IMAP BACKEND ────────────────────────────────────
+  mailu-imap:
+    image: ghcr.io/mailu/dovecot:2024.06.51
+    container_name: rajcv-mailu-imap
+    restart: always
+    env_file: ./mailu/mailu.env
+    volumes:
+      - ./mailu/mail:/mail
+      - /etc/letsencrypt/live/mail.rajcv.online/fullchain.pem:/certs/cert.pem:ro
+      - /etc/letsencrypt/live/mail.rajcv.online/privkey.pem:/certs/key.pem:ro
+    depends_on:
+      - mailu-admin
+    networks:
+      internal:
+        aliases:
+          - imap
+
+  # ── MAILU WEBMAIL PORTAL ──────────────────────────────────
+  mailu-webmail:
+    image: ghcr.io/mailu/webmail:2024.06.51
+    container_name: rajcv-mailu-webmail
+    restart: always
+    env_file: ./mailu/mailu.env
+    depends_on:
+      - mailu-imap
+    networks:
+      internal:
+        aliases:
+          - webmail
+
+  # ── MAILU ANTISPAM METERS ─────────────────────────────────
+  mailu-antispam:
+    image: ghcr.io/mailu/rspamd:2024.06.51
+    container_name: rajcv-mailu-antispam
+    restart: always
+    env_file: ./mailu/mailu.env
+    volumes:
+      - ./mailu/overrides/rspamd:/overrides:ro
+    networks:
+      internal:
+        aliases:
+          - antispam
+
+  # ── MAILU REDIS KEY/STORE ─────────────────────────────────
+  mailu-redis:
+    image: redis:7-alpine
+    container_name: rajcv-mailu-redis
+    restart: always
+    networks:
+      internal:
+        aliases:
+          - redis
+
+# ── GLOBAL NETWORK INTERFACES ────────────────────────────────
 networks:
   internal:
     driver: bridge
 
+# ── GLOBAL VOLUMES MAP ───────────────────────────────────────
 volumes:
   grafana_data:
   loki_data:
   prometheus_data:
   nginx-logs:
-  volumes:
   postgres_data:
   kafka_data:

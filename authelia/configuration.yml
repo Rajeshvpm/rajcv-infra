@@ -12,7 +12,7 @@ server:
 
 log:
   level: info
-  format: text
+  format: json
 
 identity_validation:
   reset_password:
@@ -125,3 +125,8 @@ identity_providers:
         userinfo_signed_response_alg: 'none'
         id_token_signed_response_alg: 'RS256'
         claims_policy: 'cloudflare_policy'
+telemetry:
+  metrics:
+    enabled: true
+    address: 'tcp://:9959'
+

@@ -114,7 +114,17 @@ rajcv.online`
           });
 
           console.log(`Resolution email sent for ticket #${data.ticketId}`);
-
+          // ── CREDIT SETTLEMENT ─────────────────────────────
+          // ticket.raised_for = person who was asked to serve
+          // ticket.name       = person who raised the request
+          // raised_for gets +5 for serving, name already lost 5 on raise
+          if (ticket.raised_for) {
+            await db.query(
+              `UPDATE users SET credits = credits + 5 WHERE name=$1`,
+              [ticket.raised_for.toLowerCase()]
+            );
+            console.log(`Credits +5 → ${ticket.raised_for} (served favour #${data.ticketId})`);
+          }
         } catch (err) {
           console.error(`Failed to send resolution email for ticket #${data.ticketId}:`, err.message);
         }
